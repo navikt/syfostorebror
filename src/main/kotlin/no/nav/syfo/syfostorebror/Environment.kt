@@ -1,18 +1,13 @@
 package no.nav.syfo.syfostorebror
 
-import kafka.server.KafkaConfig
-import no.nav.syfo.kafka.KafkaConfig
 import no.nav.syfo.kafka.KafkaCredentials
 
 data class Environment(
         val applicationPort: Int = getEnvVar("APPLICATION_PORT", "8080").toInt(),
         val applicationThreads: Int = getEnvVar("APPLICATION_THREADS", "4").toInt(),
-        val avvistSykmeldingTopic: String = getEnvVar("KAFKA_AVVIST_SYKMELDING_TOPIC", "privat-syfo-sm2013-avvistBehandling"),
-        val oppgavevarselTopic: String = getEnvVar("KAFKA_OPPGAVEVARSEL_TOPIC", "aapen-syfo-oppgavevarsel-v1"),
-        override val kafkaBootstrapServers: String = getEnvVar("KAFKA_BOOTSTRAP_SERVERS_URL"),
-        val tjenesterUrl: String = getEnvVar("TJENESTER_URL"),
-        val cluster: String = getEnvVar("NAIS_CLUSTER_NAME")
-) : KafkaConfig
+        val soknadTopic: String = getEnvVar("KAFKA_SOKNAD_TOPIC", "syfo-soknad-v2"),
+        override val kafkaBootstrapServers: String = getEnvVar("KAFKA_BOOTSTRAP_SERVERS_URL")
+) : no.nav.syfo.kafka.KafkaConfig
 
 data class VaultSecrets(
         val serviceuserUsername: String,

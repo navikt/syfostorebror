@@ -23,15 +23,11 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
-import no.nav.syfo.syfostorebror.api.registerNaisApi
-import no.nav.syfo.syfostorebror.avvistsykmelding.OppgaveVarsel
-import no.nav.syfo.syfostorebror.avvistsykmelding.opprettVarselForAvvisteSykmeldinger
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
-import no.nav.syfo.kafka.toProducerConfig
+import no.nav.syfo.syfostorebror.api.registerNaisApi
 import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
@@ -58,11 +54,9 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
             .envOverrides()
     val consumerProperties = kafkaBaseConfig.toConsumerConfig(
+            /* Todo: Koble på syfosøknad */
             "syfostorebror-consumer", valueDeserializer = StringDeserializer::class
     )
-
-    val producerProperties = kafkaBaseConfig.toProducerConfig(
-            "syfostorebror", valueSerializer = JacksonKafkaSerializer::class)
 
     embeddedServer(Netty, env.applicationPort) {
         install(MicrometerMetrics) {
@@ -79,7 +73,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         initRouting(applicationState)
     }.start(wait = false)
 
-    launchListeners(env, applicationState, consumerProperties, producerProperties)
+    launchListeners(env, applicationState, consumerProperties)
 
     Runtime.getRuntime().addShutdownHook(Thread {
         coroutineContext.cancelChildren()
@@ -92,21 +86,17 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 fun CoroutineScope.launchListeners(
         env: Environment,
         applicationState: ApplicationState,
-        consumerProperties: Properties,
-        producerProperties: Properties
+        consumerProperties: Properties
 ) {
     try {
         val listeners = (1..env.applicationThreads).map {
             launch {
                 val kafkaconsumer = KafkaConsumer<String, String>(consumerProperties)
-                kafkaconsumer.subscribe(listOf(env.avvistSykmeldingTopic))
-
-                val kafkaproducer = KafkaProducer<String, OppgaveVarsel>(producerProperties)
+                kafkaconsumer.subscribe(listOf(env.soknadTopic))
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {
-                        opprettVarselForAvvisteSykmeldinger(it, kafkaproducer,
-                                env.oppgavevarselTopic, env.tjenesterUrl)
+                        println("Mottok melding")
                     }
                     delay(100)
                 }
