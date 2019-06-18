@@ -5,10 +5,6 @@ buildscript {
     ext.logback_version = '1.2.3'
     ext.prometheus_version = '0.5.0'
     ext.spek_version = "2.0.4"
-    ext.logstash_encoder_version = '5.1'
-    ext.kafka_version = '2.0.0'
-    ext.jackson_version = '2.9.7'
-    ext.syfosm_common_models_version = '1.0.19'
 }
 
 plugins {
@@ -53,10 +49,6 @@ dependencies {
     implementation "io.ktor:ktor-client-logging-jvm:$ktor_version"
 
     implementation "org.apache.kafka:kafka_2.12:$kafka_version"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
-    
-    implementation "no.nav.syfo.sm:syfosm-common-kafka:$syfosm_common_models_version"
 
     implementation "ch.qos.logback:logback-classic:$logback_version"
     implementation "net.logstash.logback:logstash-logback-encoder:$logstash_encoder_version"

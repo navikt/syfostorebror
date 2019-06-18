@@ -4,9 +4,9 @@ import io.prometheus.client.Counter
 
 const val METRICS_NS = "syfostorebror"
 
-val AVVIST_SM_MOTTATT: Counter = Counter.build()
+val SM_OVERVAKET: Counter = Counter.build()
         .namespace(METRICS_NS)
-        .name("avvist_sykmelding_mottatt_count")
-        .help("Antall avviste sykmeldinger som er mottatt")
+        .name("sykmelding_overvaket_count")
+        .help("Antall sykmeldinger talt og prosessert av syfostorebror")
         .register()
 

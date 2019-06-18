@@ -12,6 +12,3 @@ src/generated
 
 # OS specific
 .DS_Store
-
-# Local environment
-localEnv.json
