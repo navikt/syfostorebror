@@ -16,7 +16,10 @@ val micrometerVersion = "1.1.4"
 val kotlinxSerializationVersion = "0.9.0"
 val logstashLogbackEncoderVersion = "5.2"
 val kafkaEmbeddedVersion = "2.1.1"
-
+val logstash_encoder_version = "5.1"
+val kafka_version = "2.0.0"
+val jackson_version = "2.9.7"
+val smCommonVersion = "1.0.20"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.31"
@@ -49,10 +52,15 @@ dependencies {
     implementation ("io.ktor:ktor-client-logging:$ktorVersion")
     implementation ("io.ktor:ktor-client-logging-jvm:$ktorVersion")
 
+    implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version")
+    implementation ("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
+
     implementation ("org.apache.kafka:kafka_2.12:$kafkaVersion")
 
     implementation ("ch.qos.logback:logback-classic:$logbackVersion")
     implementation ("net.logstash.logback:logstash-logback-encoder:$logstashLogbackEncoderVersion")
+
+    implementation ("no.nav.syfo.sm:syfosm-common-kafka:$smCommonVersion")
 
     compile ("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationVersion")
     compile ("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$kotlinxSerializationVersion")
