@@ -33,6 +33,9 @@ jobs:
 #          name: Run OWASP CVE checks
 #          command: mvn -Powasp dependency-check:check
       - run:
+          name: Build application
+          command: ./gradlew build
+      - run:
           name: Build docker image
           command: docker build --build-arg version=$RELEASE_VERSION --build-arg app_name=$CIRCLE_PROJECT_REPONAME -t docker.pkg.github.com/$DOCKER_TAG .
       - run:
@@ -60,7 +63,7 @@ jobs:
           command: source $BASH_ENV; deployment-cli deploy create --cluster=dev-fss --team=teamsykefravr -r=naiserator.yaml --version=${DOCKER_TAG} --repository=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
       - slack/approval:
           message: Do you want to deploy this version to production?
-          mentions: '@goran.berntsen'
+          mentions: 'goran.berntsen'
       - run:
           name: Create github deployment for dev-fss
           command: source $BASH_ENV; deployment-cli deploy create --cluster=dev-fss --team=teamsykefravr -r=naiserator.yaml --version=${DOCKER_TAG} --repository=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
