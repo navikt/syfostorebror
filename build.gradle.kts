@@ -35,7 +35,13 @@ repositories {
     maven (url= "https://dl.bintray.com/spekframework/spek-dev")
     //maven (url= "https://repo.adeo.no/repository/maven-snapshots/")
     //maven (url= "https://repo.adeo.no/repository/maven-releases/")
-    maven (url= "https://maven.pkg.github.com")
+    maven {
+        url = uri("https://maven.pkg.github.com/navikt/")
+        credentials {
+            username = System.getProperty("github.pkg.username") ?: System.getenv("GH_PACKAGES_USERNAME")
+            password = System.getProperty("github.pkg.password") ?: System.getenv("GH_PACKAGES_PASSWORD")
+        }
+    }
     maven (url= "http://packages.confluent.io/maven/")
     mavenCentral()
     jcenter()
