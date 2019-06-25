@@ -1,0 +1,88 @@
+version: 2.1
+orbs:
+  slack: 'circleci/slack@3.2.0'
+jobs:
+  test:
+    docker:
+      - image: "circleci/openjdk:11"
+    steps:
+      - checkout
+      - run:
+          name: Verify that the application builds
+          command: ./gradlew clean build
+  build:
+    docker:
+      - image: "circleci/openjdk:11"
+    steps:
+      - checkout
+      - setup_remote_docker
+      # Since we use the docker tag in another part of the build we make sure its the same across the jobs
+      - run:
+          name: Generate version number and docker image tags
+          command: |
+            mkdir /tmp/workspace
+            export MAJOR_VERSION="$(head -1 major_version)"
+            export RELEASE_VERSION=$MAJOR_VERSION.$CIRCLE_BUILD_NUM-$CIRCLE_SHA1
+            echo "export RELEASE_VERSION=$RELEASE_VERSION" >> /tmp/workspace/properties.env
+            echo "export DOCKER_TAG=\"$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_PROJECT_REPONAME:$RELEASE_VERSION\"" >> /tmp/workspace/properties.env
+            cat /tmp/workspace/properties.env >> $BASH_ENV
+#      - run:
+#          name: Set artifact version
+#          command: mvn versions:set -B -DnewVersion=$RELEASE_VERSION
+#      - run:
+#          name: Run OWASP CVE checks
+#          command: mvn -Powasp dependency-check:check
+      - run:
+          name: Build application
+          command: ./gradlew build
+      - run:
+          name: Build docker image
+          command: docker build --build-arg version=$RELEASE_VERSION --build-arg app_name=$CIRCLE_PROJECT_REPONAME -t docker.pkg.github.com/$DOCKER_TAG .
+      - run:
+          name: Docker push
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin docker.pkg.github.com
+            echo "Pushing with tag $DOCKER_TAG"
+            docker push docker.pkg.github.com/$DOCKER_TAG
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - properties.env
+  deploy:
+    docker:
+      - image: "navikt/deployment-cli:44bb04ecc11c0e57ac539744411c70794dd31899"
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - checkout
+      - run:
+          name: Set up environment variables
+          command: cat /tmp/workspace/properties.env >> $BASH_ENV
+      - run:
+          name: Create github deployment for dev-fss
+          command: source $BASH_ENV; deployment-cli deploy create --cluster=dev-fss --team=teamsykefravr -r=naiserator.yaml --version=${DOCKER_TAG} --repository=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+      - slack/approval:
+          message: Do you want to deploy this version to production?
+          mentions: 'goran.berntsen'
+      - run:
+          name: Create github deployment for dev-fss
+          command: source $BASH_ENV; deployment-cli deploy create --cluster=dev-fss --team=teamsykefravr -r=naiserator.yaml --version=${DOCKER_TAG} --repository=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+
+workflows:
+  version: 2
+  build_and_release:
+    jobs:
+      - test:
+          filters:
+            branches:
+              ignore: master
+      - build:
+          filters:
+            branches:
+              only: master
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
