@@ -23,6 +23,9 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
+import no.nav.syfo.db.Database
+import no.nav.syfo.db.DatabaseInterface
+import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
@@ -57,6 +60,9 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
             /* Todo: Koble på syfosøknad */
             "syfostorebror-consumer", valueDeserializer = StringDeserializer::class
     )
+
+    val vaultCredentialService = VaultCredentialService()
+    val database = Database(env, vaultCredentialService)
 
     embeddedServer(Netty, env.applicationPort) {
         install(MicrometerMetrics) {

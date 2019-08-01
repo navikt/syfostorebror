@@ -19,7 +19,12 @@ val kafkaEmbeddedVersion = "2.1.1"
 val logstash_encoder_version = "5.1"
 val kafka_version = "2.0.0"
 val jackson_version = "2.9.7"
-val smCommonVersion = "1.0.20"
+val smCommonVersion = "1.0.22"
+val postgresVersion = "42.2.5"
+val h2Version = "1.4.197"
+val flywayVersion = "5.2.4"
+val hikariVersion = "3.3.0"
+val vaultJavaDriveVersion = "3.1.0"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.31"
@@ -33,20 +38,10 @@ repositories {
     maven (url= "https://kotlin.bintray.com/kotlinx")
     maven (url= "https://dl.bintray.com/kotlin/ktor")
     maven (url= "https://dl.bintray.com/spekframework/spek-dev")
-    //maven (url= "https://repo.adeo.no/repository/maven-snapshots/")
-    //maven (url= "https://repo.adeo.no/repository/maven-releases/")
-    maven {
-        url = uri("https://maven.pkg.github.com/navikt/")
-        credentials {
-            username = System.getProperty("github.pkg.username") ?: System.getenv("GH_PACKAGES_USERNAME")
-            password = System.getProperty("github.pkg.password") ?: System.getenv("GH_PACKAGES_PASSWORD")
-        }
-    }
     maven (url= "http://packages.confluent.io/maven/")
     mavenCentral()
     jcenter()
 }
-
 
 dependencies {
     implementation(kotlin("stdlib"))
@@ -67,7 +62,15 @@ dependencies {
     implementation ("ch.qos.logback:logback-classic:$logbackVersion")
     implementation ("net.logstash.logback:logstash-logback-encoder:$logstashLogbackEncoderVersion")
 
+    // Kafka
     implementation ("no.nav.syfo.sm:syfosm-common-kafka:$smCommonVersion")
+
+    // Database
+    implementation("org.postgresql:postgresql:$postgresVersion")
+    implementation("com.h2database:h2:$h2Version")
+    implementation("com.zaxxer:HikariCP:$hikariVersion")
+    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("com.bettercloud:vault-java-driver:$vaultJavaDriveVersion")
 
     compile ("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$kotlinxSerializationVersion")
     compile ("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$kotlinxSerializationVersion")
