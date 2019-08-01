@@ -1,4 +1,4 @@
-package no.nav.syfo.syfostorebror
+package no.nav.syfo
 
 import no.nav.syfo.kafka.KafkaCredentials
 

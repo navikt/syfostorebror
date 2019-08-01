@@ -1,4 +1,4 @@
-package no.nav.syfo.syfostorebror.api
+package no.nav.syfo.api
 
 import io.ktor.application.call
 import io.ktor.http.ContentType
