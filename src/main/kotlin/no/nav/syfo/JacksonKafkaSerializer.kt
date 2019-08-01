@@ -1,4 +1,4 @@
-package no.nav.syfo.syfostorebror
+package no.nav.syfo
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature

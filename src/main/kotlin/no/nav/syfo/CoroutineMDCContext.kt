@@ -1,4 +1,4 @@
-package no.nav.syfo.syfostorebror
+package no.nav.syfo
 
 import kotlinx.coroutines.ThreadContextElement
 import org.slf4j.MDC

@@ -1,4 +1,4 @@
-package no.nav.syfo.syfostorebror.metrics
+package no.nav.syfo.metrics
 
 import io.prometheus.client.Counter
 

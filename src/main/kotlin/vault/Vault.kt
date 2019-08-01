@@ -5,7 +5,7 @@ import com.bettercloud.vault.Vault
 import com.bettercloud.vault.VaultConfig
 import com.bettercloud.vault.VaultException
 import kotlinx.coroutines.delay
-import no.nav.syfo.syfostorebror.ApplicationState
+import no.nav.syfo.ApplicationState
 import org.slf4j.LoggerFactory
 import java.io.File
 
