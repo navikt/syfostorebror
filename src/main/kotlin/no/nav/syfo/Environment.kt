@@ -1,5 +1,6 @@
 package no.nav.syfo
 
+import no.nav.syfo.kafka.KafkaConfig
 import no.nav.syfo.kafka.KafkaCredentials
 
 data class Environment(
@@ -10,7 +11,7 @@ data class Environment(
         val databaseName: String = getEnvVar("DATABASE_NAME", "syfostorebror"),
         val syfostorebrorDBURL: String = getEnvVar("SYFOSTOREBROR_DB_URL"),
         val mountPathVault: String = getEnvVar("MOUNT_PATH_VAULT")
-) : no.nav.syfo.kafka.KafkaConfig
+) : KafkaConfig
 
 data class VaultSecrets(
         val serviceuserUsername: String,

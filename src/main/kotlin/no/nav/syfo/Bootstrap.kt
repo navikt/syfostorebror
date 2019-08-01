@@ -24,7 +24,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import no.nav.syfo.db.Database
-import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
@@ -101,8 +100,8 @@ fun CoroutineScope.launchListeners(
                 kafkaconsumer.subscribe(listOf(env.soknadTopic))
 
                 while (applicationState.running) {
-                    kafkaconsumer.poll(Duration.ofMillis(0)).forEach {
-                        println("Mottok melding")
+                    kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
+                        log.info("Mottok melding")
                     }
                     delay(100)
                 }
