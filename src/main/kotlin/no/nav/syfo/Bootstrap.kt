@@ -101,7 +101,7 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        log.info("Mottok melding")
+                        log.info("Mottok melding", consumerRecord.value())
                     }
                     delay(100)
                 }
