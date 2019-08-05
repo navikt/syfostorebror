@@ -25,6 +25,7 @@ val h2Version = "1.4.197"
 val flywayVersion = "5.2.4"
 val hikariVersion = "3.3.0"
 val vaultJavaDriveVersion = "3.1.0"
+val opentableVersion = "0.13.1"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.31"
@@ -79,6 +80,8 @@ dependencies {
     testImplementation ("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
     testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
+    testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
+
 
     testRuntimeOnly ("org.spekframework.spek2:spek-runtime-jvm:$spekVersion")
     testRuntimeOnly ("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
@@ -91,6 +94,10 @@ dependencies {
 
 
 tasks {
+    "run"(JavaExec::class) {
+        environment("LC_ALL","en_US.UTF-8")
+        environment("LC_CTYPE", "en_US.UTF-8")
+    }
     withType<Jar> {
         manifest.attributes["Main-Class"] = "no.nav.syfo.BootstrapKt"
     }
