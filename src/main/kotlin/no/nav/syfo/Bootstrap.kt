@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.metrics.micrometer.MicrometerMetrics
@@ -29,13 +30,16 @@ import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.db.DatabaseInterface
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
+import java.sql.Connection
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.Executors
+import javax.sql.DataSource
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
 
@@ -62,6 +66,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
+
 
     embeddedServer(Netty, env.applicationPort) {
         install(MicrometerMetrics) {
@@ -126,4 +131,9 @@ fun Application.initRouting(applicationState: ApplicationState) {
                 }
         )
     }
+}
+
+class TestDatabase(private val datasource: DataSource) : DatabaseInterface {
+    override val connection: Connection
+        get() = datasource.connection.apply { autoCommit = false }
 }

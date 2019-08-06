@@ -80,7 +80,7 @@ dependencies {
     testImplementation ("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
     testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
-    testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
+    implementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
 
 
     testRuntimeOnly ("org.spekframework.spek2:spek-runtime-jvm:$spekVersion")
@@ -94,10 +94,6 @@ dependencies {
 
 
 tasks {
-    "run"(JavaExec::class) {
-        environment("LC_ALL","en_US.UTF-8")
-        environment("LC_CTYPE", "en_US.UTF-8")
-    }
     withType<Jar> {
         manifest.attributes["Main-Class"] = "no.nav.syfo.BootstrapKt"
     }
@@ -123,5 +119,7 @@ tasks {
             includeEngines("spek2")
         }
         testLogging.showStandardStreams = true
+        environment("LC_ALL","en_US.UTF-8")
+        environment("LC_CTYPE", "en_US.UTF-8")
     }
 }

@@ -2,11 +2,17 @@ package no.nav.syfo
 
 import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import no.nav.common.KafkaEnvironment
+import no.nav.syfo.aksessering.db.hentSoknad
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
+import no.nav.syfo.persistering.SoknadRecord
+import no.nav.syfo.persistering.lagreSoknad
+import no.nav.syfo.testutil.TestDB
+import no.nav.syfo.testutil.dropData
 import org.amshove.kluent.shouldEqual
+import org.amshove.kluent.shouldNotBeNull
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -18,6 +24,8 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.net.ServerSocket
 import java.sql.Connection
+import java.sql.Date
+import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.*
 import javax.sql.DataSource
@@ -25,12 +33,13 @@ import javax.sql.DataSource
 object SoknadServiceSpek : Spek( {
 
     // Embedded Postgres
-    val embeddedPostgres = EmbeddedPostgres.start()
-    val testDatabase = TestDatabase(embeddedPostgres.postgresDatabase)
+    //val embeddedPostgres = EmbeddedPostgres.start()
+    //val testDatabase = TestDatabase(embeddedPostgres.postgresDatabase)
 
     //Flyway.configure().run {
     //    dataSource(embeddedPostgres.postgresDatabase).load().migrate()
     //}
+    val testDatabase = TestDB()
 
     // Embedded Kafka
     fun getRandomPort() = ServerSocket(0).use{
@@ -69,19 +78,36 @@ object SoknadServiceSpek : Spek( {
 
 
 
-    describe("SoknadService") {
-        val message = File("src/test/resources/arbeidstakersoknad.json").readText() // Hent fra json
-        it("Can read a message from the kafka topic"){
+    describe("Persister søknad fra Kafka til Postgres") {
+        val message : String = File("src/test/resources/arbeidstakersoknad.json").readText() // Hent fra json
+        val jsonmessage = objectMapper.readTree(message)
+
+        it ("Les melding fra Kafka"){
             producer.send(ProducerRecord(topic,message))
             val messages = consumer.poll(Duration.ofMillis(5000)).toList()
             messages.size shouldEqual 1
             messages[0].value() shouldEqual message
         }
+
+        it ( "Skriv søknad til postgres"){
+            val soknadRecord = SoknadRecord(
+                    jsonmessage.get("id").textValue(),
+                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(jsonmessage.get("opprettet").textValue()),
+                    jsonmessage.toString()
+            )
+            testDatabase.connection.lagreSoknad(soknadRecord)
+        }
+
+        it ("Les søknad fra postgres"){
+            testDatabase.hentSoknad(jsonmessage.get("id").textValue()).shouldNotBeNull()
+        }
+
     }
 
     afterGroup {
         embeddedKafkaEnvironment.tearDown()
-        embeddedPostgres.close()
+        testDatabase.connection.dropData()
+        testDatabase.stop()
     }
 
 })
@@ -89,4 +115,5 @@ object SoknadServiceSpek : Spek( {
 class TestDatabase(private val datasource: DataSource) : DatabaseInterface {
     override val connection: Connection
         get() = datasource.connection.apply { autoCommit = false }
+
 }
