@@ -1,5 +1,6 @@
 package no.nav.syfo.persistering
 
+import com.fasterxml.jackson.databind.JsonNode
 import java.sql.Connection
 import java.sql.Timestamp
 import java.util.*
@@ -15,7 +16,7 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
         ).use {
             it.setString(1, soknad.soknadId)
             it.setTimestamp(2, Timestamp(soknad.innsendtDato.time))
-            it.setString(3, soknad.soknad)
+            it.setObject(3, toPGObject(soknad.soknad))
             it.executeUpdate()
         }
 
@@ -38,8 +39,3 @@ fun Connection.erSoknadLagret(soknadId : String) {
     }
 }
 
-data class SoknadRecord (
-        val soknadId : String,
-        val innsendtDato : Date,
-        val soknad : String
-)

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.opentable.db.postgres.embedded.EmbeddedPostgres
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.metrics.micrometer.MicrometerMetrics

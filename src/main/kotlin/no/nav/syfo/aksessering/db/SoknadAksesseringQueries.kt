@@ -24,5 +24,5 @@ fun ResultSet.toSoknadRecord(): SoknadRecord =
         SoknadRecord(
                 soknadId = getString("soknad_id"),
                 innsendtDato = getTimestamp("innsendt_dato"),
-                soknad = getString("soknad")
+                soknad = objectMapper.readTree(getString("soknad"))
         )
