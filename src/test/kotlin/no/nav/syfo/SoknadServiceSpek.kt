@@ -15,7 +15,6 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.slf4j.LoggerFactory
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
@@ -27,7 +26,6 @@ import java.util.*
 object SoknadServiceSpek : Spek( {
 
     val testDatabase = TestDB()
-    val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
     // Embedded Kafka
     fun getRandomPort() = ServerSocket(0).use{

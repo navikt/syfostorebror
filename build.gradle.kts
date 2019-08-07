@@ -59,8 +59,6 @@ dependencies {
     implementation ("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
 
     implementation ("org.apache.kafka:kafka_2.12:$kafkaVersion")
-
-    implementation ("ch.qos.logback:logback-classic:$logbackVersion")
     implementation ("net.logstash.logback:logstash-logback-encoder:$logstashLogbackEncoderVersion")
 
     // Kafka
@@ -78,7 +76,9 @@ dependencies {
 
     testImplementation ("org.amshove.kluent:kluent:$kluentVersion")
     testImplementation ("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
-    testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion"){
+        exclude("ch.qos.logback", "logback-classic:1.2.3")
+    }
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
     implementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
 
@@ -89,8 +89,8 @@ dependencies {
     api ("io.ktor:ktor-client-mock:$ktorVersion")
     api ("io.ktor:ktor-client-mock-jvm:$ktorVersion")
 
-
 }
+
 
 
 tasks {
