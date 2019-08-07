@@ -29,16 +29,15 @@ import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
-import no.nav.syfo.db.DatabaseInterface
+import no.nav.syfo.persistering.SoknadRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
-import java.sql.Connection
+import java.text.SimpleDateFormat
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.Executors
-import javax.sql.DataSource
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
 
@@ -105,7 +104,14 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        log.info("Mottok melding: ${consumerRecord.value()}")
+                        log.info("Mottok melding!")
+                        val message = objectMapper.readTree(consumerRecord.toString())
+                        val soknadRecord = SoknadRecord(
+                                message.get("id").textValue(),
+                                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+                                        .parse(message.get("opprettet").textValue()),
+                                message
+                        )
                     }
                     delay(100)
                 }
@@ -130,9 +136,4 @@ fun Application.initRouting(applicationState: ApplicationState) {
                 }
         )
     }
-}
-
-class TestDatabase(private val datasource: DataSource) : DatabaseInterface {
-    override val connection: Connection
-        get() = datasource.connection.apply { autoCommit = false }
 }

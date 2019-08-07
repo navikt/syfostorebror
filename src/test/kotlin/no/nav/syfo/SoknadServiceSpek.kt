@@ -72,9 +72,11 @@ object SoknadServiceSpek : Spek( {
 
         it ("Les melding fra Kafka"){
             producer.send(ProducerRecord(topic,message))
-            val messages = consumer.poll(Duration.ofMillis(5000)).toList()
-            messages.size shouldEqual 1
-            messages[0].value() shouldEqual message
+            val messages = consumer.poll(Duration.ofMillis(5000))
+            messages.toList().size shouldEqual 1
+            messages.forEach {consumerRecord ->
+                consumerRecord.value() shouldEqual message
+            }
         }
 
         it ( "Skriv søknad til postgres"){
