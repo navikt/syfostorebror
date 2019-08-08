@@ -36,6 +36,9 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -108,8 +111,7 @@ fun CoroutineScope.launchListeners(
                         val message = objectMapper.readTree(consumerRecord.toString())
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue(),
-                                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-                                        .parse(message.get("opprettet").textValue()),
+                                DateTimeFormatter.ISO_DATE_TIME.parse(message.get("opprettet").textValue()) as LocalDateTime,
                                 message
                         )
                     }

@@ -80,7 +80,7 @@ dependencies {
         exclude("ch.qos.logback", "logback-classic:1.2.3")
     }
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
-    implementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
+    testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
 
 
     testRuntimeOnly ("org.spekframework.spek2:spek-runtime-jvm:$spekVersion")
@@ -119,7 +119,5 @@ tasks {
             includeEngines("spek2")
         }
         testLogging.showStandardStreams = true
-        environment("LC_ALL","en_US.UTF-8")
-        environment("LC_CTYPE", "en_US.UTF-8")
     }
 }

@@ -1,5 +1,6 @@
 package no.nav.syfo
 
+import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
 import no.nav.syfo.aksessering.db.hentSoknad
 import no.nav.syfo.kafka.loadBaseConfig
@@ -21,8 +22,12 @@ import java.io.File
 import java.net.ServerSocket
 import java.text.SimpleDateFormat
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
+@InternalAPI
 object SoknadServiceSpek : Spek( {
 
     val testDatabase = TestDB()
@@ -80,8 +85,7 @@ object SoknadServiceSpek : Spek( {
         it ( "Skriv søknad til postgres"){
             val soknadRecord = SoknadRecord(
                     jsonmessage.get("id").textValue(),
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
-                            .parse(jsonmessage.get("opprettet").textValue()),
+                    LocalDateTime.from(DateTimeFormatter.ISO_DATE_TIME.parse(jsonmessage.get("opprettet").textValue())),
                     jsonmessage)
             testDatabase.connection.lagreSoknad(soknadRecord)
         }

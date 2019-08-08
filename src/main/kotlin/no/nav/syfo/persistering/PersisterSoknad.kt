@@ -15,7 +15,7 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
                 """.trimIndent()
         ).use {
             it.setString(1, soknad.soknadId)
-            it.setTimestamp(2, Timestamp(soknad.innsendtDato.time))
+            it.setTimestamp(2, Timestamp.valueOf(soknad.innsendtDato))
             it.setObject(3, toPGObject(soknad.soknad))
             it.executeUpdate()
         }
