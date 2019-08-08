@@ -1,6 +1,7 @@
 package no.nav.syfo
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -107,11 +108,7 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        log.info("Mottok melding! Headers & key: ")
-                        log.info(consumerRecord.headers().toString())
-                        log.info(consumerRecord.key().toString())
-
-                        val message = objectMapper.readTree(consumerRecord.toString())
+                        val message : JsonNode = objectMapper.readTree(consumerRecord.toString())
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue(),
                                 DateTimeFormatter.ISO_DATE_TIME.parse(message.get("opprettet").textValue()) as LocalDateTime,
