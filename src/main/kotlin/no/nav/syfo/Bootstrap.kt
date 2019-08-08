@@ -29,11 +29,16 @@ import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.persistering.SoknadRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
+import java.text.SimpleDateFormat
 import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -45,7 +50,7 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
-private val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
+val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
 fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()) {
     val env = Environment()
@@ -62,6 +67,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
+
 
     embeddedServer(Netty, env.applicationPort) {
         install(MicrometerMetrics) {
@@ -101,7 +107,16 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        log.info("Mottok melding: ${consumerRecord.value()}")
+                        log.info("Mottok melding! Headers & key: ")
+                        log.info(consumerRecord.headers().toString())
+                        log.info(consumerRecord.key().toString())
+
+                        val message = objectMapper.readTree(consumerRecord.toString())
+                        val soknadRecord = SoknadRecord(
+                                message.get("id").textValue(),
+                                DateTimeFormatter.ISO_DATE_TIME.parse(message.get("opprettet").textValue()) as LocalDateTime,
+                                message
+                        )
                     }
                     delay(100)
                 }

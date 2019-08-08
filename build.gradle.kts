@@ -25,6 +25,7 @@ val h2Version = "1.4.197"
 val flywayVersion = "5.2.4"
 val hikariVersion = "3.3.0"
 val vaultJavaDriveVersion = "3.1.0"
+val opentableVersion = "0.13.1"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.31"
@@ -58,8 +59,6 @@ dependencies {
     implementation ("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
 
     implementation ("org.apache.kafka:kafka_2.12:$kafkaVersion")
-
-    implementation ("ch.qos.logback:logback-classic:$logbackVersion")
     implementation ("net.logstash.logback:logstash-logback-encoder:$logstashLogbackEncoderVersion")
 
     // Kafka
@@ -77,8 +76,12 @@ dependencies {
 
     testImplementation ("org.amshove.kluent:kluent:$kluentVersion")
     testImplementation ("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
-    testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion"){
+        exclude("ch.qos.logback", "logback-classic:1.2.3")
+    }
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
+    testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
+
 
     testRuntimeOnly ("org.spekframework.spek2:spek-runtime-jvm:$spekVersion")
     testRuntimeOnly ("org.spekframework.spek2:spek-runner-junit5:$spekVersion")
@@ -86,8 +89,8 @@ dependencies {
     api ("io.ktor:ktor-client-mock:$ktorVersion")
     api ("io.ktor:ktor-client-mock-jvm:$ktorVersion")
 
-
 }
+
 
 
 tasks {

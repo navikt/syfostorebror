@@ -1,0 +1,330 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "type": "ARBEIDSTAKERE",
+  "status": "SENDT",
+  "aktorId": "1234567890000",
+  "sykmeldingId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+  "arbeidsgiver": {
+    "navn": "STOR ARBEIDSGIVER AS",
+    "orgnummer": "999999999"
+  },
+  "arbeidssituasjon": "ARBEIDSTAKER",
+  "korrigerer": "11111111-1111-1111-1111-111111111111",
+  "korrigertAv": null,
+  "soktUtenlandsopphold": null,
+  "arbeidsgiverForskutterer": null,
+  "fom": "2019-07-17",
+  "tom": "2019-07-20",
+  "startSyketilfelle": "2019-07-01",
+  "arbeidGjenopptatt": "2019-07-17",
+  "sykmeldingSkrevet": "2019-07-01T00:00:00",
+  "opprettet": "2019-08-02T15:02:20.123",
+  "sendtNav": null,
+  "sendtArbeidsgiver": "2019-08-02T15:02:33.123",
+  "egenmeldinger": [],
+  "papirsykmeldinger": null,
+  "fravar": [],
+  "andreInntektskilder": [
+    {
+      "type": "SELVSTENDIG_NARINGSDRIVENDE",
+      "sykmeldt": false
+    }
+  ],
+  "soknadsperioder": [
+    {
+      "fom": "2019-07-17",
+      "tom": "2019-07-20",
+      "sykmeldingsgrad": 100,
+      "faktiskGrad": null,
+      "avtaltTimer": null,
+      "faktiskTimer": null,
+      "sykmeldingstype": "AKTIVITET_IKKE_MULIG"
+    }
+  ],
+  "sporsmal": [
+    {
+      "id": "249627",
+      "tag": "ANSVARSERKLARING",
+      "sporsmalstekst": "Jeg vet at jeg kan miste retten til sykepenger hvis opplysningene jeg gir ikke er riktige eller fullstendige. Jeg vet også at NAV kan holde igjen eller kreve tilbake penger, og at å gi feil opplysninger kan være straffbart.",
+      "undertekst": null,
+      "min": null,
+      "max": null,
+      "svartype": "CHECKBOX_PANEL",
+      "kriteriumForVisningAvUndersporsmal": null,
+      "svar": [
+        {
+          "verdi": "CHECKED"
+        }
+      ],
+      "undersporsmal": []
+    },
+    {
+      "id": "249628",
+      "tag": "EGENMELDINGER",
+      "sporsmalstekst": "Vi har registrert at du ble sykmeldt mandag 1. juli 2019. Brukte du egenmeldinger og/eller var du sykmeldt i perioden 15. - 30. juni 2019?",
+      "undertekst": null,
+      "min": null,
+      "max": null,
+      "svartype": "JA_NEI",
+      "kriteriumForVisningAvUndersporsmal": "JA",
+      "svar": [
+        {
+          "verdi": "NEI"
+        }
+      ],
+      "undersporsmal": [
+        {
+          "id": "249629",
+          "tag": "EGENMELDINGER_NAR",
+          "sporsmalstekst": "Hvilke dager før 1. juli 2019 var du borte fra jobb?",
+          "undertekst": null,
+          "min": "2019-01-01",
+          "max": "2019-06-30",
+          "svartype": "PERIODER",
+          "kriteriumForVisningAvUndersporsmal": null,
+          "svar": [],
+          "undersporsmal": []
+        }
+      ]
+    },
+    {
+      "id": "249630",
+      "tag": "TILBAKE_I_ARBEID",
+      "sporsmalstekst": "Var du tilbake i fullt arbeid hos LØNNS- OG REGNSKAPSSENTERET i løpet av perioden 17. - 20. juli 2019?",
+      "undertekst": null,
+      "min": null,
+      "max": null,
+      "svartype": "JA_NEI",
+      "kriteriumForVisningAvUndersporsmal": "JA",
+      "svar": [
+        {
+          "verdi": "JA"
+        }
+      ],
+      "undersporsmal": [
+        {
+          "id": "249631",
+          "tag": "TILBAKE_NAR",
+          "sporsmalstekst": "Når begynte du å jobbe igjen?",
+          "undertekst": null,
+          "min": "2019-07-17",
+          "max": "2019-07-20",
+          "svartype": "DATO",
+          "kriteriumForVisningAvUndersporsmal": null,
+          "svar": [
+            {
+              "verdi": "2019-07-17"
+            }
+          ],
+          "undersporsmal": []
+        }
+      ]
+    },
+    {
+      "id": "249632",
+      "tag": "ANDRE_INNTEKTSKILDER",
+      "sporsmalstekst": "Har du andre inntektskilder enn LØNNS- OG REGNSKAPSSENTERET?",
+      "undertekst": null,
+      "min": null,
+      "max": null,
+      "svartype": "JA_NEI",
+      "kriteriumForVisningAvUndersporsmal": "JA",
+      "svar": [
+        {
+          "verdi": "JA"
+        }
+      ],
+      "undersporsmal": [
+        {
+          "id": "249633",
+          "tag": "HVILKE_ANDRE_INNTEKTSKILDER",
+          "sporsmalstekst": "Hvilke andre inntektskilder har du?",
+          "undertekst": "Du trenger ikke oppgi penger fra NAV",
+          "min": null,
+          "max": null,
+          "svartype": "CHECKBOX_GRUPPE",
+          "kriteriumForVisningAvUndersporsmal": null,
+          "svar": [],
+          "undersporsmal": [
+            {
+              "id": "249634",
+              "tag": "INNTEKTSKILDE_ANDRE_ARBEIDSFORHOLD",
+              "sporsmalstekst": "andre arbeidsforhold",
+              "undertekst": null,
+              "min": null,
+              "max": null,
+              "svartype": "CHECKBOX",
+              "kriteriumForVisningAvUndersporsmal": "CHECKED",
+              "svar": [],
+              "undersporsmal": [
+                {
+                  "id": "249635",
+                  "tag": "INNTEKTSKILDE_ANDRE_ARBEIDSFORHOLD_ER_DU_SYKMELDT",
+                  "sporsmalstekst": "Er du sykmeldt fra dette?",
+                  "undertekst": null,
+                  "min": null,
+                  "max": null,
+                  "svartype": "JA_NEI",
+                  "kriteriumForVisningAvUndersporsmal": null,
+                  "svar": [],
+                  "undersporsmal": []
+                }
+              ]
+            },
+            {
+              "id": "249636",
+              "tag": "INNTEKTSKILDE_SELVSTENDIG",
+              "sporsmalstekst": "selvstendig næringsdrivende",
+              "undertekst": null,
+              "min": null,
+              "max": null,
+              "svartype": "CHECKBOX",
+              "kriteriumForVisningAvUndersporsmal": "CHECKED",
+              "svar": [
+                {
+                  "verdi": "CHECKED"
+                }
+              ],
+              "undersporsmal": [
+                {
+                  "id": "249637",
+                  "tag": "INNTEKTSKILDE_SELVSTENDIG_ER_DU_SYKMELDT",
+                  "sporsmalstekst": "Er du sykmeldt fra dette?",
+                  "undertekst": null,
+                  "min": null,
+                  "max": null,
+                  "svartype": "JA_NEI",
+                  "kriteriumForVisningAvUndersporsmal": null,
+                  "svar": [
+                    {
+                      "verdi": "NEI"
+                    }
+                  ],
+                  "undersporsmal": []
+                }
+              ]
+            },
+            {
+              "id": "249638",
+              "tag": "INNTEKTSKILDE_SELVSTENDIG_DAGMAMMA",
+              "sporsmalstekst": "dagmamma",
+              "undertekst": null,
+              "min": null,
+              "max": null,
+              "svartype": "CHECKBOX",
+              "kriteriumForVisningAvUndersporsmal": "CHECKED",
+              "svar": [],
+              "undersporsmal": [
+                {
+                  "id": "249639",
+                  "tag": "INNTEKTSKILDE_SELVSTENDIG_DAGMAMMA_ER_DU_SYKMELDT",
+                  "sporsmalstekst": "Er du sykmeldt fra dette?",
+                  "undertekst": null,
+                  "min": null,
+                  "max": null,
+                  "svartype": "JA_NEI",
+                  "kriteriumForVisningAvUndersporsmal": null,
+                  "svar": [],
+                  "undersporsmal": []
+                }
+              ]
+            },
+            {
+              "id": "249640",
+              "tag": "INNTEKTSKILDE_JORDBRUKER",
+              "sporsmalstekst": "jordbruk / fiske / reindrift",
+              "undertekst": null,
+              "min": null,
+              "max": null,
+              "svartype": "CHECKBOX",
+              "kriteriumForVisningAvUndersporsmal": "CHECKED",
+              "svar": [],
+              "undersporsmal": [
+                {
+                  "id": "249641",
+                  "tag": "INNTEKTSKILDE_JORDBRUKER_ER_DU_SYKMELDT",
+                  "sporsmalstekst": "Er du sykmeldt fra dette?",
+                  "undertekst": null,
+                  "min": null,
+                  "max": null,
+                  "svartype": "JA_NEI",
+                  "kriteriumForVisningAvUndersporsmal": null,
+                  "svar": [],
+                  "undersporsmal": []
+                }
+              ]
+            },
+            {
+              "id": "249642",
+              "tag": "INNTEKTSKILDE_FRILANSER",
+              "sporsmalstekst": "frilanser",
+              "undertekst": null,
+              "min": null,
+              "max": null,
+              "svartype": "CHECKBOX",
+              "kriteriumForVisningAvUndersporsmal": "CHECKED",
+              "svar": [],
+              "undersporsmal": [
+                {
+                  "id": "249643",
+                  "tag": "INNTEKTSKILDE_FRILANSER_ER_DU_SYKMELDT",
+                  "sporsmalstekst": "Er du sykmeldt fra dette?",
+                  "undertekst": null,
+                  "min": null,
+                  "max": null,
+                  "svartype": "JA_NEI",
+                  "kriteriumForVisningAvUndersporsmal": null,
+                  "svar": [],
+                  "undersporsmal": []
+                }
+              ]
+            },
+            {
+              "id": "249644",
+              "tag": "INNTEKTSKILDE_ANNET",
+              "sporsmalstekst": "annet",
+              "undertekst": null,
+              "min": null,
+              "max": null,
+              "svartype": "CHECKBOX",
+              "kriteriumForVisningAvUndersporsmal": null,
+              "svar": [],
+              "undersporsmal": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "249645",
+      "tag": "VAER_KLAR_OVER_AT",
+      "sporsmalstekst": "Viktig å være klar over:",
+      "undertekst": "<ul><li>Du kan bare få sykepenger hvis det er din egen sykdom eller skade som hindrer deg i å jobbe. Sosiale eller økonomiske problemer gir ikke rett til sykepenger.</li><li>Du kan miste retten til sykepenger hvis du nekter å opplyse om din egen arbeidsevne, eller hvis du ikke tar imot behandling eller tilrettelegging.</li><li>Retten til sykepenger gjelder bare inntekt du har mottatt som lønn og betalt skatt av på sykmeldingstidspunktet.</li><li>NAV kan innhente opplysninger som er nødvendige for å behandle søknaden.</li><li>Du må melde fra til NAV hvis du satt i varetekt, sonet straff eller var under forvaring i sykmeldingsperioden.</li><li>Fristen for å søke sykepenger er som hovedregel 3 måneder</li></ul><p>Du kan lese mer om rettigheter og plikter på <a href=\\\"https://www.nav.no/sykepenger\\\" target=\\\"_blank\\\">nav.no/sykepenger</a>.</p>",
+      "min": null,
+      "max": null,
+      "svartype": "IKKE_RELEVANT",
+      "kriteriumForVisningAvUndersporsmal": null,
+      "svar": [],
+      "undersporsmal": []
+    },
+    {
+      "id": "249646",
+      "tag": "BEKREFT_OPPLYSNINGER",
+      "sporsmalstekst": "Jeg har lest all informasjonen jeg har fått i søknaden og bekrefter at opplysningene jeg har gitt er korrekte.",
+      "undertekst": null,
+      "min": null,
+      "max": null,
+      "svartype": "CHECKBOX_PANEL",
+      "kriteriumForVisningAvUndersporsmal": null,
+      "svar": [
+        {
+          "verdi": "CHECKED"
+        }
+      ],
+      "undersporsmal": []
+    }
+  ],
+  "avsendertype": null,
+  "ettersending": false,
+  "mottaker": "ARBEIDSGIVER"
+}
