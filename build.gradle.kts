@@ -76,9 +76,10 @@ dependencies {
 
     testImplementation ("org.amshove.kluent:kluent:$kluentVersion")
     testImplementation ("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
-    testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion"){
-        exclude("ch.qos.logback", "logback-classic:1.2.3")
-    }
+    testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
+//    {
+//        exclude("ch.qos.logback", "logback-classic:1.2.3")
+//    }
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
     testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
 
