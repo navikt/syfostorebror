@@ -1,15 +1,15 @@
 {
-  "id": "154d2633-5deb-46d0-beb9-ac97848faeb8",
+  "id": "00000000-0000-0000-0000-000000000000",
   "type": "ARBEIDSTAKERE",
   "status": "SENDT",
-  "aktorId": "1556025402895",
-  "sykmeldingId": "3d5815de-da68-44ab-a57b-c67d1f5a9958",
+  "aktorId": "1234567890000",
+  "sykmeldingId": "ffffffff-ffff-ffff-ffff-ffffffffffff",
   "arbeidsgiver": {
-    "navn": "LØNNS- OG REGNSKAPSSENTERET",
-    "orgnummer": "974739410"
+    "navn": "STOR ARBEIDSGIVER AS",
+    "orgnummer": "999999999"
   },
   "arbeidssituasjon": "ARBEIDSTAKER",
-  "korrigerer": "42e9b46b-b7b4-4587-935e-b71dabca90ee",
+  "korrigerer": "11111111-1111-1111-1111-111111111111",
   "korrigertAv": null,
   "soktUtenlandsopphold": null,
   "arbeidsgiverForskutterer": null,
