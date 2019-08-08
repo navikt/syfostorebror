@@ -50,7 +50,7 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
-private val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
+val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
 fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()) {
     val env = Environment()
@@ -107,7 +107,10 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        log.info("Mottok melding!")
+                        log.info("Mottok melding! Headers & key: ")
+                        log.info(consumerRecord.headers().toString())
+                        log.info(consumerRecord.key().toString())
+
                         val message = objectMapper.readTree(consumerRecord.toString())
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue(),

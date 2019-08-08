@@ -23,19 +23,3 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
         connection.commit()
     }
 }
-
-fun Connection.erSoknadLagret(soknadId : String) {
-    use { connection ->
-        connection.prepareStatement(
-                """
-                   SELECT *
-                   FROM soknader
-                   WHERE id=?;
-                """.trimIndent()
-        ).use {
-            it.setString(1,soknadId)
-            it.executeQuery().next()
-        }
-    }
-}
-
