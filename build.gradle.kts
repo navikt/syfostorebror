@@ -54,6 +54,7 @@ dependencies {
     implementation ("io.ktor:ktor-client-apache:$ktorVersion")
     implementation ("io.ktor:ktor-client-logging:$ktorVersion")
     implementation ("io.ktor:ktor-client-logging-jvm:$ktorVersion")
+    implementation ("ch.qos.logback:logback-classic:$logbackVersion")
 
     implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version")
     implementation ("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
