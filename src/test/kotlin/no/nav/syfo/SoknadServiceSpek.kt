@@ -65,39 +65,39 @@ object SoknadServiceSpek : Spek( {
 
     consumer.subscribe(listOf(topic))
 
-    beforeGroup { embeddedKafkaEnvironment.start() }
+    beforeGroup {
+        embeddedKafkaEnvironment.start()
+    }
 
 
-
-    describe("Persister søknad fra Kafka til Postgres") {
+    describe("Kan lese melding fra kafka og skrive den til postgres") {
         val message : String = File("src/test/resources/arbeidstakersoknad.json").readText() // Hent fra json
-        val jsonmessage = objectMapper.readTree(message)
 
-        it ("Les melding fra Kafka"){
+        it ("skal være kun en melding på topic, og det er den vi sendte"){
             producer.send(ProducerRecord(topic,message))
-            val messages = consumer.poll(Duration.ofMillis(5000))
-            messages.toList().size shouldEqual 1
-            messages.forEach {consumerRecord ->
-                consumerRecord.value() shouldEqual message
+            val messages = consumer.poll(Duration.ofMillis(5000)).toList()
+            messages.size shouldEqual 1
+            messages.forEach{
+                it.value() shouldEqual message
             }
         }
 
-        it ( "Skriv søknad til postgres"){
-            val soknadRecord = SoknadRecord(
-                    jsonmessage.get("id").textValue(),
-                    LocalDateTime.from(DateTimeFormatter.ISO_DATE_TIME.parse(jsonmessage.get("opprettet").textValue())),
-                    jsonmessage)
-            testDatabase.connection.lagreSoknad(soknadRecord)
-        }
+        it ( "søknad skal kunne skrives til postgres og skal være samme som på kafka"){
+            producer.send(ProducerRecord(topic,message))
+            val messages = consumer.poll(Duration.ofMillis(5000)).toList()
+            messages.forEach{
+                val soknad = objectMapper.readTree(it.value())
+                val soknadRecord = SoknadRecord(
+                        soknad.get("id").textValue(),
+                        messages[0].offset().toInt(),
+                        soknad
+                )
+                testDatabase.connection.lagreSoknad(soknadRecord)
+                val rowsFromPG = testDatabase.hentSoknad(soknad.get("id").textValue(), messages[0].offset().toInt())
+                rowsFromPG[0].soknadId shouldEqual soknad.get("id").textValue()
+                rowsFromPG.size shouldEqual 1
 
-        it ("Les søknad fra postgres, skal være samme som innsendt"){
-            testDatabase.hentSoknad(jsonmessage.get("id").textValue())[0]
-                    .soknadId shouldEqual jsonmessage.get("id").textValue()
-        }
-
-        it ("ID for record skal være samme som ID i JSON-objektet") {
-            val soknadRecord = testDatabase.hentSoknad(jsonmessage.get("id").textValue())
-            soknadRecord[0].soknadId shouldEqual soknadRecord[0].soknad.get("id").textValue()
+            }
         }
 
     }
