@@ -129,7 +129,7 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        val message : JsonNode = objectMapper.readTree(consumerRecord.toString())
+                        val message : JsonNode = objectMapper.readTree(consumerRecord.value())
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue(),
                                 consumerRecord.offset().toInt(),
