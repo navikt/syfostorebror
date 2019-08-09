@@ -10,12 +10,12 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
     use { connection ->
         connection.prepareStatement(
                 """
-                    INSERT INTO soknader (soknad_id, innsendt_dato, soknad)
+                    INSERT INTO soknader (soknad_id, topic_offset, soknad)
                     VALUES (?,?,to_jsonb(?));
                 """.trimIndent()
         ).use {
             it.setString(1, soknad.soknadId)
-            it.setTimestamp(2, Timestamp.valueOf(soknad.innsendtDato))
+            it.setInt(2, soknad.topicOffset)
             it.setObject(3, toPGObject(soknad.soknad))
             it.executeUpdate()
         }

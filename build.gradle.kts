@@ -15,7 +15,7 @@ val kafkaVersion = "2.0.0"
 val micrometerVersion = "1.1.4"
 val kotlinxSerializationVersion = "0.9.0"
 val logstashLogbackEncoderVersion = "5.2"
-val kafkaEmbeddedVersion = "2.1.1"
+val kafkaEmbeddedVersion = "2.2.0"
 val logstash_encoder_version = "5.1"
 val kafka_version = "2.0.0"
 val jackson_version = "2.9.7"
@@ -48,6 +48,7 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:$coroutinesVersion")
     implementation ("io.ktor:ktor-metrics-micrometer:$ktorVersion")
     implementation ("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
     implementation ("io.ktor:ktor-server-netty:$ktorVersion")
@@ -78,9 +79,6 @@ dependencies {
     testImplementation ("org.amshove.kluent:kluent:$kluentVersion")
     testImplementation ("org.spekframework.spek2:spek-dsl-jvm:$spekVersion")
     testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
-//    {
-//        exclude("ch.qos.logback", "logback-classic:1.2.3")
-//    }
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
     testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
 

@@ -1,11 +1,10 @@
 package no.nav.syfo.persistering
 
 import com.fasterxml.jackson.databind.JsonNode
-import java.time.LocalDateTime
 
 data class SoknadRecord(
         val soknadId: String,
-        val innsendtDato: LocalDateTime,
+        val topicOffset: Int,
         val soknad: JsonNode
 )
 

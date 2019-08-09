@@ -24,6 +24,7 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
+import kotlinx.coroutines.slf4j.MDCContext
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
@@ -31,6 +32,8 @@ import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
 import no.nav.syfo.persistering.SoknadRecord
+import no.nav.syfo.persistering.lagreSoknad
+import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
@@ -53,6 +56,8 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
 
 val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
+val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher() + MDCContext()
+
 fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()) {
     val env = Environment()
     val vaultSecrets =
@@ -67,8 +72,23 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     )
 
     val vaultCredentialService = VaultCredentialService()
-    val database = Database(env, vaultCredentialService)
 
+    val database = Database(env, vaultCredentialService)
+    launch(backgroundTasksContext) {
+        try {
+            Vault.renewVaultTokenTask(applicationState)
+        } finally {
+            applicationState.running = false
+        }
+    }
+
+    launch(backgroundTasksContext) {
+        try {
+            vaultCredentialService.runRenewCredentialsTask { applicationState.running }
+        } finally {
+            applicationState.running = false
+        }
+    }
 
     embeddedServer(Netty, env.applicationPort) {
         install(MicrometerMetrics) {
@@ -85,7 +105,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         initRouting(applicationState)
     }.start(wait = false)
 
-    launchListeners(env, applicationState, consumerProperties)
+    launchListeners(env, applicationState, consumerProperties, database)
 
     Runtime.getRuntime().addShutdownHook(Thread {
         coroutineContext.cancelChildren()
@@ -98,7 +118,8 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 fun CoroutineScope.launchListeners(
         env: Environment,
         applicationState: ApplicationState,
-        consumerProperties: Properties
+        consumerProperties: Properties,
+        database: Database
 ) {
     try {
         val listeners = (1..env.applicationThreads).map {
@@ -108,12 +129,13 @@ fun CoroutineScope.launchListeners(
 
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        val message : JsonNode = objectMapper.readTree(consumerRecord.toString())
+                        val message : JsonNode = objectMapper.readTree(consumerRecord.value())
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue(),
-                                DateTimeFormatter.ISO_DATE_TIME.parse(message.get("opprettet").textValue()) as LocalDateTime,
+                                consumerRecord.offset().toInt(),
                                 message
                         )
+                        database.connection.lagreSoknad(soknadRecord)
                     }
                     delay(100)
                 }
