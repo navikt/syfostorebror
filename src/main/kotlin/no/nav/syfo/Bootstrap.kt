@@ -68,7 +68,8 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
             .envOverrides()
     val consumerProperties = kafkaBaseConfig.toConsumerConfig(
             /* Todo: Koble på syfosøknad */
-            "syfostorebror-consumer", valueDeserializer = StringDeserializer::class
+            groupId = "syfostorebror-consumer",
+            valueDeserializer = StringDeserializer::class
     )
 
     val vaultCredentialService = VaultCredentialService()
@@ -136,6 +137,7 @@ fun CoroutineScope.launchListeners(
                                 message
                         )
                         database.connection.lagreSoknad(soknadRecord)
+                        log.info("Søknad mottatt")
                     }
                     delay(100)
                 }
