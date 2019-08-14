@@ -45,13 +45,6 @@ class SoknadStreamResetter(val env: Environment, private val topic: String, priv
         log.info("Subscribing to topic ${topic}")
         consumer.subscribe(listOf(topic))
 
-        try {
-            log.info("polling...")
-            consumer.poll(Duration.ofSeconds(10))
-        } catch (e:Exception) {
-            log.warn("exception on poll ", e)
-        }
-
         log.info("seekToBeginning...")
         consumer.seekToBeginning(consumer.assignment())
 
