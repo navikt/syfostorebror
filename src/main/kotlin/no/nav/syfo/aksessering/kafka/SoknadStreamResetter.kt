@@ -55,8 +55,8 @@ class SoknadStreamResetter(val env: Environment, private val topic: String, priv
         log.info("seekToBeginning...")
         consumer.seekToBeginning(consumer.assignment())
 
-        log.info("polling...")
-        consumer.poll(Duration.ofSeconds(10))
+        //log.info("polling...")
+        //consumer.poll(Duration.ofSeconds(10))
         log.info("calling commitSync...")
         val offsets = consumer.assignment().associateBy({ it }, { OffsetAndMetadata(0) })
         consumer.commitSync(offsets)
