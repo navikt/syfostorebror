@@ -45,11 +45,22 @@ class SoknadStreamResetter(val env: Environment, private val topic: String, priv
         log.info("Subscribing to topic ${topic}")
         consumer.subscribe(listOf(topic))
 
+        try {
+            log.info("polling...")
+            consumer.poll(Duration.ofSeconds(10))
+        } catch (e:Exception) {
+            log.warn("exception on poll ", e)
+        }
+
         log.info("seekToBeginning...")
         consumer.seekToBeginning(consumer.assignment())
 
-        //log.info("polling...")
-        //consumer.poll(Duration.ofSeconds(10))
+        log.info("checking offsets...")
+        for (partition in consumer.assignment()) {
+            var offset = consumer.position(partition)
+            log.info("partition: ${partition}, offset: ${offset}")
+        }
+
         log.info("calling commitSync...")
         val offsets = consumer.assignment().associateBy({ it }, { OffsetAndMetadata(0) })
         consumer.commitSync(offsets)
