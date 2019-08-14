@@ -9,18 +9,18 @@ import java.sql.ResultSet
 
 
 @InternalAPI
-fun DatabaseInterface.hentSoknad(soknadid: String, offset: Int): List<SoknadRecord> =
+fun DatabaseInterface.hentSoknad(soknadid: String, status: String): List<SoknadRecord> =
         connection.use { connection ->
             connection.prepareStatement(
                     """
-                        SELECT soknad_id, topic_offset, soknad 
+                        SELECT soknad_id, soknad_status, soknad 
                         FROM soknader
                         WHERE soknad_id=?
-                        AND topic_offset=?;
+                        AND soknad_status=?;
                     """.trimIndent()
             ).use {
                 it.setString(1,soknadid)
-                it.setInt(2,offset)
+                it.setString(2,status)
                 it.executeQuery().toList{ toSoknadRecord() }
             }
         }
@@ -29,6 +29,6 @@ fun DatabaseInterface.hentSoknad(soknadid: String, offset: Int): List<SoknadReco
 fun ResultSet.toSoknadRecord(): SoknadRecord =
         SoknadRecord(
                 soknadId = getString("soknad_id"),
-                topicOffset = getInt("topic_offset"),
+                soknadStatus = getString("soknad_status"),
                 soknad = objectMapper.readTree(getString("soknad"))
         )

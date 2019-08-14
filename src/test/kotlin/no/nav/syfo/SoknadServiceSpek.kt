@@ -7,9 +7,11 @@ import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
 import no.nav.syfo.persistering.SoknadRecord
+import no.nav.syfo.persistering.erSoknadLagret
 import no.nav.syfo.persistering.lagreSoknad
 import no.nav.syfo.testutil.TestDB
 import no.nav.syfo.testutil.dropData
+import org.amshove.kluent.shouldBe
 import org.amshove.kluent.shouldEqual
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -20,11 +22,7 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.net.ServerSocket
-import java.text.SimpleDateFormat
 import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 @InternalAPI
@@ -89,15 +87,27 @@ object SoknadServiceSpek : Spek( {
                 val soknad = objectMapper.readTree(it.value())
                 val soknadRecord = SoknadRecord(
                         soknad.get("id").textValue(),
-                        messages[0].offset().toInt(),
+                        soknad.get("status").textValue(),
                         soknad
                 )
                 testDatabase.connection.lagreSoknad(soknadRecord)
-                val rowsFromPG = testDatabase.hentSoknad(soknad.get("id").textValue(), messages[0].offset().toInt())
-                rowsFromPG[0].soknadId shouldEqual soknad.get("id").textValue()
+                val rowsFromPG = testDatabase.hentSoknad(soknad.get("id").textValue(), soknad.get("status").textValue())
+                rowsFromPG[0].soknadId shouldEqual soknad.get("id").textValue() shouldEqual "00000000-0000-0000-0000-000000000000"
+                rowsFromPG[0].soknadStatus shouldEqual soknad.get("status").textValue() shouldEqual "SENDT"
                 rowsFromPG.size shouldEqual 1
-
             }
+        }
+
+        it ("lagret søknad skal finnes i databasen") {
+
+                val soknadRecord = SoknadRecord(
+                        "00000000-0000-0000-0000-000000000001",
+                        "NY",
+                        objectMapper.readTree("{}")
+                )
+                testDatabase.connection.lagreSoknad(soknadRecord)
+                testDatabase.connection.erSoknadLagret(soknadRecord) shouldBe true
+
         }
 
     }

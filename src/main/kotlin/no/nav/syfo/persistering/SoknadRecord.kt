@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 
 data class SoknadRecord(
         val soknadId: String,
-        val topicOffset: Int,
+        val soknadStatus: String,
         val soknad: JsonNode
 )
 

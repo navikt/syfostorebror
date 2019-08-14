@@ -25,6 +25,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.slf4j.MDCContext
+import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
@@ -32,6 +33,7 @@ import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
 import no.nav.syfo.persistering.SoknadRecord
+import no.nav.syfo.persistering.erSoknadLagret
 import no.nav.syfo.persistering.lagreSoknad
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -45,6 +47,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
 
@@ -54,7 +57,7 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
-val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
+private val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
 val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher() + MDCContext()
 
@@ -64,16 +67,9 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
             objectMapper.readValue<VaultSecrets>(Paths.get("/var/run/secrets/nais.io/vault/credentials.json").toFile())
     val applicationState = ApplicationState()
 
-    val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
-            .envOverrides()
-    val consumerProperties = kafkaBaseConfig.toConsumerConfig(
-            /* Todo: Koble på syfosøknad */
-            "syfostorebror-consumer", valueDeserializer = StringDeserializer::class
-    )
-
     val vaultCredentialService = VaultCredentialService()
-
     val database = Database(env, vaultCredentialService)
+
     launch(backgroundTasksContext) {
         try {
             Vault.renewVaultTokenTask(applicationState)
@@ -90,7 +86,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         }
     }
 
-    embeddedServer(Netty, env.applicationPort) {
+    val applicationServer = embeddedServer(Netty, env.applicationPort) {
         install(MicrometerMetrics) {
             registry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM)
             meterBinders = listOf(
@@ -105,10 +101,24 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         initRouting(applicationState)
     }.start(wait = false)
 
-    launchListeners(env, applicationState, consumerProperties, database)
+    if (env.resetStreamOnly){
+        log.info("Starter SoknadStreamResetter...")
+        val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup)
+        soknadResetter.run()
+        log.info("SoknadStreamResetter kjørt.")
+    } else {
+        val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
+                .envOverrides()
+        val consumerProperties = kafkaBaseConfig.toConsumerConfig(
+                /* Todo: Koble på syfosøknad */
+                groupId = env.soknadConsumerGroup,
+                valueDeserializer = StringDeserializer::class
+        )
+        launchListeners(env, applicationState, consumerProperties, database)
+    }
 
     Runtime.getRuntime().addShutdownHook(Thread {
-        coroutineContext.cancelChildren()
+        applicationServer.stop(10, 10, TimeUnit.SECONDS)
     })
 
     applicationState.initialized = true
@@ -132,10 +142,16 @@ fun CoroutineScope.launchListeners(
                         val message : JsonNode = objectMapper.readTree(consumerRecord.value())
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue(),
-                                consumerRecord.offset().toInt(),
+                                message.get("status").textValue(),
                                 message
                         )
-                        database.connection.lagreSoknad(soknadRecord)
+                        if (database.connection.erSoknadLagret(soknadRecord)){
+                            log.error("Mulig duplikat - søknad er allerede lagret")
+                        } else {
+                            database.connection.lagreSoknad(soknadRecord)
+                            log.info("Søknad lagret")
+                        }
+
                     }
                     delay(100)
                 }
