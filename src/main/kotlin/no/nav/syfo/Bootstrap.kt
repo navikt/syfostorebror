@@ -57,7 +57,7 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
-val log: org.slf4j.Logger = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
+private val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
 val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher() + MDCContext()
 
