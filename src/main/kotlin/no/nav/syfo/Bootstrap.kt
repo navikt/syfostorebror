@@ -106,12 +106,6 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup)
         soknadResetter.run()
         log.info("SoknadStreamResetter kjørt.")
-        Thread {
-            while(true){
-                log.info("SoknadStreamResetter ferdig. Fjern env.RESET_STREAM_ONLY og start appen på nytt.")
-                Thread.sleep(60000)
-            }
-        }
     } else {
         val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
                 .envOverrides()

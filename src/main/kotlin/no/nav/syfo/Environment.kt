@@ -12,7 +12,7 @@ data class Environment(
         val databaseName: String = getEnvVar("DATABASE_NAME", "syfostorebror"),
         val syfostorebrorDBURL: String = getEnvVar("SYFOSTOREBROR_DB_URL"),
         val mountPathVault: String = getEnvVar("MOUNT_PATH_VAULT"),
-        val resetStreamOnly : Boolean = getEnvVarOptional("RESET_STREAM_ONLY", "false") == "true"
+        val resetStreamOnly : Boolean = getEnvVar("RESET_STREAM_ONLY", "false") == "true"
 ) : KafkaConfig
 
 data class VaultSecrets(
@@ -26,5 +26,3 @@ data class VaultSecrets(
 fun getEnvVar(varName: String, defaultValue: String? = null) =
         System.getenv(varName) ?: defaultValue ?: throw RuntimeException("Missing required variable \"$varName\"")
 
-fun getEnvVarOptional(varName: String, defaultValue: String? = null) =
-        System.getenv(varName) ?: defaultValue
