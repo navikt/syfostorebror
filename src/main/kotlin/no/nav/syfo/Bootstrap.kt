@@ -25,6 +25,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.slf4j.MDCContext
+import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
@@ -66,14 +67,6 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
             objectMapper.readValue<VaultSecrets>(Paths.get("/var/run/secrets/nais.io/vault/credentials.json").toFile())
     val applicationState = ApplicationState()
 
-    val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
-            .envOverrides()
-    val consumerProperties = kafkaBaseConfig.toConsumerConfig(
-            /* Todo: Koble på syfosøknad */
-            groupId = "syfostorebror-consumer",
-            valueDeserializer = StringDeserializer::class
-    )
-
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
 
@@ -108,7 +101,27 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         initRouting(applicationState)
     }.start(wait = false)
 
-    launchListeners(env, applicationState, consumerProperties, database)
+    if (env.resetStreamOnly){
+        log.info("Starter SoknadStreamResetter...")
+        val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup)
+        soknadResetter.run()
+        log.info("SoknadStreamResetter kjørt.")
+        Thread {
+            while(true){
+                log.info("SoknadStreamResetter ferdig. Fjern env.RESET_STREAM_ONLY og start appen på nytt.")
+                Thread.sleep(60000)
+            }
+        }
+    } else {
+        val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
+                .envOverrides()
+        val consumerProperties = kafkaBaseConfig.toConsumerConfig(
+                /* Todo: Koble på syfosøknad */
+                groupId = env.soknadConsumerGroup,
+                valueDeserializer = StringDeserializer::class
+        )
+        launchListeners(env, applicationState, consumerProperties, database)
+    }
 
     Runtime.getRuntime().addShutdownHook(Thread {
         applicationServer.stop(10, 10, TimeUnit.SECONDS)
