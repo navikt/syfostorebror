@@ -101,7 +101,6 @@ object SoknadServiceSpek : Spek( {
                 val rowsFromPG = testDatabase.hentSoknaderFraId(soknad.get("id").textValue())
                 rowsFromPG[0].soknadId shouldEqual soknad.get("id").textValue() shouldEqual "00000000-0000-0000-0000-000000000000"
                 rowsFromPG.size shouldEqual 1
-                log.info("BOO: ${rowsFromPG[0].compositKey}")
             }
         }
 
