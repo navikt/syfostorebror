@@ -7,20 +7,17 @@ import no.nav.syfo.objectMapper
 import no.nav.syfo.persistering.SoknadRecord
 import java.sql.ResultSet
 
-
 @InternalAPI
-fun DatabaseInterface.hentSoknad(soknadid: String, status: String): List<SoknadRecord> =
+fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
         connection.use { connection ->
             connection.prepareStatement(
                     """
-                        SELECT soknad_id, soknad_status, soknad 
+                        SELECT composit_key, soknad_id, soknad 
                         FROM soknader
-                        WHERE soknad_id=?
-                        AND soknad_status=?;
+                        WHERE soknad_id=?;
                     """.trimIndent()
             ).use {
                 it.setString(1,soknadid)
-                it.setString(2,status)
                 it.executeQuery().toList{ toSoknadRecord() }
             }
         }
@@ -28,7 +25,7 @@ fun DatabaseInterface.hentSoknad(soknadid: String, status: String): List<SoknadR
 @InternalAPI
 fun ResultSet.toSoknadRecord(): SoknadRecord =
         SoknadRecord(
+                compositKey = getString("composit_key"),
                 soknadId = getString("soknad_id"),
-                soknadStatus = getString("soknad_status"),
                 soknad = objectMapper.readTree(getString("soknad"))
         )

@@ -40,11 +40,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
-import java.text.SimpleDateFormat
 import java.time.Duration
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -141,8 +137,11 @@ fun CoroutineScope.launchListeners(
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
                         val message : JsonNode = objectMapper.readTree(consumerRecord.value())
                         val soknadRecord = SoknadRecord(
+                                message.get("id").textValue() + "|" +
+                                message.get("status").textValue() + "|" +
+                                message.get("sendtNav").textValue() + "|" +
+                                message.get("sendtArbeidsgiver").textValue(),
                                 message.get("id").textValue(),
-                                message.get("status").textValue(),
                                 message
                         )
                         if (database.connection.erSoknadLagret(soknadRecord)){

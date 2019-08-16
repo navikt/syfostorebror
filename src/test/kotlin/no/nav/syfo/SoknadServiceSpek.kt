@@ -2,7 +2,7 @@ package no.nav.syfo
 
 import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
-import no.nav.syfo.aksessering.db.hentSoknad
+import no.nav.syfo.aksessering.db.hentSoknaderFraId
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
@@ -18,17 +18,21 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
+import org.slf4j.LoggerFactory
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.net.ServerSocket
 import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @InternalAPI
 object SoknadServiceSpek : Spek( {
 
     val testDatabase = TestDB()
+    val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
     // Embedded Kafka
     fun getRandomPort() = ServerSocket(0).use{
@@ -86,23 +90,26 @@ object SoknadServiceSpek : Spek( {
             messages.forEach{
                 val soknad = objectMapper.readTree(it.value())
                 val soknadRecord = SoknadRecord(
+            soknad.get("id").textValue() + "|" +
+                        soknad.get("status").textValue() + "|" +
+                        soknad.get("sendtNav").textValue() + "|" +
+                        soknad.get("sendtArbeidsgiver").textValue(),
                         soknad.get("id").textValue(),
-                        soknad.get("status").textValue(),
                         soknad
                 )
                 testDatabase.connection.lagreSoknad(soknadRecord)
-                val rowsFromPG = testDatabase.hentSoknad(soknad.get("id").textValue(), soknad.get("status").textValue())
+                val rowsFromPG = testDatabase.hentSoknaderFraId(soknad.get("id").textValue())
                 rowsFromPG[0].soknadId shouldEqual soknad.get("id").textValue() shouldEqual "00000000-0000-0000-0000-000000000000"
-                rowsFromPG[0].soknadStatus shouldEqual soknad.get("status").textValue() shouldEqual "SENDT"
                 rowsFromPG.size shouldEqual 1
+                log.info("BOO: ${rowsFromPG[0].compositKey}")
             }
         }
 
         it ("lagret søknad skal finnes i databasen") {
 
                 val soknadRecord = SoknadRecord(
+                        "00000000-0000-0000-0000-000000000001|SENDT|null|2019-08-02T15:02:33.123",
                         "00000000-0000-0000-0000-000000000001",
-                        "NY",
                         objectMapper.readTree("{}")
                 )
                 testDatabase.connection.lagreSoknad(soknadRecord)
