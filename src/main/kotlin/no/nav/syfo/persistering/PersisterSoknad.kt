@@ -3,17 +3,16 @@ package no.nav.syfo.persistering
 import java.sql.Connection
 
 
-
 fun Connection.lagreSoknad(soknad : SoknadRecord){
     use { connection ->
         connection.prepareStatement(
                 """
-                    INSERT INTO soknader (soknad_id, soknad_status, soknad)
+                    INSERT INTO soknader (composit_key, soknad_id, soknad)
                     VALUES (?,?,to_jsonb(?));
                 """.trimIndent()
         ).use {
-            it.setString(1, soknad.soknadId)
-            it.setString(2, soknad.soknadStatus)
+            it.setString(1, soknad.compositKey)
+            it.setString(2, soknad.soknadId)
             it.setObject(3, toPGObject(soknad.soknad))
             it.executeUpdate()
         }
@@ -26,14 +25,12 @@ fun Connection.erSoknadLagret(soknad: SoknadRecord) =
     use {connection ->
         connection.prepareStatement(
                 """
-                    SELECT soknad_id, soknad_status
+                    SELECT composit_key
                     FROM soknader
-                    WHERE soknad_id=?
-                    AND soknad_status=?
+                    WHERE composit_key=?
                 """.trimIndent()
         ).use {
-            it.setString(1,soknad.soknadId)
-            it.setString(2,soknad.soknadStatus)
+            it.setString(1,soknad.compositKey)
             it.executeQuery().next()
         }
     }
