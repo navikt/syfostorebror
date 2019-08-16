@@ -90,10 +90,8 @@ object SoknadServiceSpek : Spek( {
                 val soknadRecord = SoknadRecord(
             soknad.get("id").textValue() + "|" +
                         soknad.get("status").textValue() + "|" +
-                        (if (soknad.get("sendtNav") == null) "null"
-                        else soknad.get("sendtNav").textValue()) + "|" +
-                        (if (soknad.get("sendtArbeidsgiver") == null) "null"
-                        else soknad.get("sendtArbeidsgiver").textValue()),
+                        (soknad.get("sendtNav")?.textValue() ?: "null") + "|" +
+                        (soknad.get("sendtArbeidsgiver")?.textValue() ?: "null"),
                         soknad.get("id").textValue(),
                         soknad
                 )
