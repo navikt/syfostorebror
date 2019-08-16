@@ -139,9 +139,10 @@ fun CoroutineScope.launchListeners(
                         val soknadRecord = SoknadRecord(
                                 message.get("id").textValue() + "|" +
                                 message.get("status").textValue() + "|" +
-                                        (if (message.get("sendtNav") == null) "null" else message.get("sendtNav").textValue()) + "|" +
-                                       // (message.get("sendtNav").textValue() ?: "null") + "|" +
-                                        (message.get("sendtArbeidsgiver").textValue() ?: "null"),
+                                        (if (message.get("sendtNav") == null) "null"
+                                        else message.get("sendtNav").textValue()) + "|" +
+                                        (if (message.get("sendtArbeidsgiver") == null) "null"
+                                        else message.get("sendtArbeidsgiver").textValue()),
                                 message.get("id").textValue(),
                                 message
                         )
