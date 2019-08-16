@@ -1,7 +1,6 @@
 package no.nav.syfo.persistering
 
 import java.sql.Connection
-import java.sql.Timestamp
 
 
 fun Connection.lagreSoknad(soknad : SoknadRecord){
