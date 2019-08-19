@@ -136,21 +136,21 @@ fun CoroutineScope.launchListeners(
                 while (applicationState.running) {
                     kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
                         val message : JsonNode = objectMapper.readTree(consumerRecord.value())
-                        val soknadRecord = SoknadRecord(
-                                message.get("id").textValue() + "|" +
+                        val compositKey: String = message.get("id").textValue() + "|" +
                                 message.get("status").textValue() + "|" +
                                 (message.get("sendtNav")?.textValue() ?: "null") + "|" +
-                                (message.get("sendtArbeidsgiver")?.textValue() ?: "null"),
+                                (message.get("sendtArbeidsgiver")?.textValue() ?: "null")
+                        val soknadRecord = SoknadRecord(
+                                compositKey,
                                 message.get("id").textValue(),
                                 message
                         )
                         if (database.connection.erSoknadLagret(soknadRecord)){
-                            log.error("Mulig duplikat - søknad er allerede lagret")
+                            log.error("Mulig duplikat - søknad er allerede lagret (pk: ${compositKey})")
                         } else {
                             database.connection.lagreSoknad(soknadRecord)
                             log.info("Søknad lagret")
                         }
-
                     }
                     delay(100)
                 }
