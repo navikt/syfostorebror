@@ -32,10 +32,7 @@ import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
-import no.nav.syfo.persistering.SoknadRecord
-import no.nav.syfo.persistering.erSoknadLagret
-import no.nav.syfo.persistering.lagreRawSoknad
-import no.nav.syfo.persistering.lagreSoknad
+import no.nav.syfo.persistering.*
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -103,6 +100,8 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup)
         soknadResetter.run()
         log.info("SoknadStreamResetter kjørt.")
+        database.connection.slettRawLog()
+        log.info("Raw-logg slettet.")
     } else {
         val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
                 .envOverrides()

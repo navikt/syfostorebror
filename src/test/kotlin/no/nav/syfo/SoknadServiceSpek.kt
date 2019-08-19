@@ -1,15 +1,14 @@
 package no.nav.syfo
 
+import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
+import no.nav.syfo.aksessering.db.hentAntallRawSoknader
 import no.nav.syfo.aksessering.db.hentSoknaderFraId
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
-import no.nav.syfo.persistering.SoknadRecord
-import no.nav.syfo.persistering.erSoknadLagret
-import no.nav.syfo.persistering.lagreRawSoknad
-import no.nav.syfo.persistering.lagreSoknad
+import no.nav.syfo.persistering.*
 import no.nav.syfo.testutil.TestDB
 import no.nav.syfo.testutil.dropData
 import org.amshove.kluent.shouldBe
@@ -120,6 +119,20 @@ object SoknadServiceSpek : Spek( {
         }
 
     }
+
+    describe ("Consumer group offset kan nullstilles og logtabell tømmes ved behov"){
+        val message : String = File("src/test/resources/arbeidstakersoknad.json").readText()
+
+        it("loggtabell kan tømmes"){
+            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
+            testDatabase.connection.slettRawLog()
+            testDatabase.hentAntallRawSoknader() shouldEqual 0
+        }
+
+
+
+    }
+
 
     afterGroup {
         embeddedKafkaEnvironment.tearDown()

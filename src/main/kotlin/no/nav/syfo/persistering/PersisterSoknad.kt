@@ -37,6 +37,19 @@ fun Connection.lagreRawSoknad(soknad: JsonNode){
     }
 }
 
+fun Connection.slettRawLog(){
+    use { connection ->
+        connection.prepareStatement(
+                """
+                    DELETE FROM soknader_raw
+                """.trimIndent()
+        ).use {
+            it.executeUpdate()
+        }
+        connection.commit()
+    }
+}
+
 fun Connection.erSoknadLagret(soknad: SoknadRecord) =
     use {connection ->
         connection.prepareStatement(
