@@ -8,6 +8,7 @@ import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
 import no.nav.syfo.persistering.SoknadRecord
 import no.nav.syfo.persistering.erSoknadLagret
+import no.nav.syfo.persistering.lagreRawSoknad
 import no.nav.syfo.persistering.lagreSoknad
 import no.nav.syfo.testutil.TestDB
 import no.nav.syfo.testutil.dropData
@@ -112,6 +113,10 @@ object SoknadServiceSpek : Spek( {
                 testDatabase.connection.lagreSoknad(soknadRecord)
                 testDatabase.connection.erSoknadLagret(soknadRecord) shouldBe true
 
+        }
+
+        it ("søknad kan lagres i loggtabell") {
+            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
         }
 
     }

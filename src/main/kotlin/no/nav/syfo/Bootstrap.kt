@@ -34,6 +34,7 @@ import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
 import no.nav.syfo.persistering.SoknadRecord
 import no.nav.syfo.persistering.erSoknadLagret
+import no.nav.syfo.persistering.lagreRawSoknad
 import no.nav.syfo.persistering.lagreSoknad
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -145,6 +146,7 @@ fun CoroutineScope.launchListeners(
                                 message.get("id").textValue(),
                                 message
                         )
+                        database.connection.lagreRawSoknad(message)
                         if (database.connection.erSoknadLagret(soknadRecord)){
                             log.error("Mulig duplikat - søknad er allerede lagret (pk: ${compositKey})")
                         } else {

@@ -1,5 +1,6 @@
 package no.nav.syfo.persistering
 
+import com.fasterxml.jackson.databind.JsonNode
 import java.sql.Connection
 
 
@@ -17,6 +18,21 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
             it.executeUpdate()
         }
 
+        connection.commit()
+    }
+}
+
+fun Connection.lagreRawSoknad(soknad: JsonNode){
+    use { connection ->
+        connection.prepareStatement(
+                """
+                    INSERT INTO soknader_raw (soknad)
+                    VALUES (to_jsonb(?));
+                """.trimIndent()
+        ).use {
+            it.setObject(1, toPGObject(soknad))
+            it.executeUpdate()
+        }
         connection.commit()
     }
 }
