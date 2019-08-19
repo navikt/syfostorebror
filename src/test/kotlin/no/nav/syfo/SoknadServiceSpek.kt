@@ -5,6 +5,7 @@ import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
 import no.nav.syfo.aksessering.db.hentAntallRawSoknader
 import no.nav.syfo.aksessering.db.hentSoknaderFraId
+import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
@@ -37,6 +38,7 @@ object SoknadServiceSpek : Spek( {
         it.localPort
     }
     val topic = "aapen-test-topic"
+
     val embeddedKafkaEnvironment = KafkaEnvironment(
             autoStart = false,
             topicNames = listOf(topic)
@@ -47,23 +49,26 @@ object SoknadServiceSpek : Spek( {
             applicationThreads = 1,
             kafkaBootstrapServers = embeddedKafkaEnvironment.brokersURL,
             mountPathVault = "vault.adeo.no",
-            soknadTopic = "topic1",
+            soknadTopic = topic,
             syfostorebrorDBURL = "",
-            databaseName = ""
+            databaseName = "",
+            soknadConsumerGroup = "spek.integration-consumer"
     )
+
     fun Properties.overrideForTest(): Properties = apply {
         remove("security.protocol")
         remove("sasl.mechanism")
     }
+
     val baseConfig = loadBaseConfig(env, credentials).overrideForTest()
     val producerProperties = baseConfig
             .toProducerConfig("spek.integration", valueSerializer = StringSerializer::class)
     val producer = KafkaProducer<String, String>(producerProperties)
     val consumerProperties = baseConfig
-            .toConsumerConfig("spek.integration-consumer", valueDeserializer = StringDeserializer::class)
+            .toConsumerConfig(env.soknadConsumerGroup, valueDeserializer = StringDeserializer::class)
     val consumer = KafkaConsumer<String, String>(consumerProperties)
 
-    consumer.subscribe(listOf(topic))
+    consumer.subscribe(listOf(env.soknadTopic))
 
     beforeGroup {
         embeddedKafkaEnvironment.start()
@@ -74,7 +79,7 @@ object SoknadServiceSpek : Spek( {
         val message : String = File("src/test/resources/arbeidstakersoknad.json").readText() // Hent fra json
 
         it ("skal være kun en melding på topic, og det er den vi sendte"){
-            producer.send(ProducerRecord(topic,message))
+            producer.send(ProducerRecord(env.soknadTopic,message))
             val messages = consumer.poll(Duration.ofMillis(5000)).toList()
             messages.size shouldEqual 1
             messages.forEach{
@@ -83,7 +88,7 @@ object SoknadServiceSpek : Spek( {
         }
 
         it ( "søknad skal kunne skrives til postgres og skal være samme som på kafka"){
-            producer.send(ProducerRecord(topic,message))
+            producer.send(ProducerRecord(env.soknadTopic,message))
             val messages = consumer.poll(Duration.ofMillis(5000)).toList()
             messages.forEach{
                 val soknad = objectMapper.readTree(it.value())
@@ -123,13 +128,26 @@ object SoknadServiceSpek : Spek( {
     describe ("Consumer group offset kan nullstilles og logtabell tømmes ved behov"){
         val message : String = File("src/test/resources/arbeidstakersoknad.json").readText()
 
-        it("loggtabell kan tømmes"){
+        it ("consumer group offset kan nullstilles"){
+            producer.send(ProducerRecord(env.soknadTopic, message))
+            val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup, credentials)
+            soknadResetter.run()
+
+            val resetConsumer = KafkaConsumer<String, String>(consumerProperties)
+            resetConsumer.subscribe(listOf(env.soknadTopic))
+
+            for (partition in resetConsumer.assignment()) {
+                var offset = resetConsumer.position(partition)
+                offset shouldEqual 0
+            }
+
+        }
+
+        it ("loggtabell kan tømmes"){
             testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
             testDatabase.connection.slettRawLog()
             testDatabase.hentAntallRawSoknader() shouldEqual 0
         }
-
-
 
     }
 

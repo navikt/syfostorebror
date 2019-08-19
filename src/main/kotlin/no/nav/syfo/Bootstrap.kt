@@ -97,7 +97,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     if (env.resetStreamOnly){
         log.info("Starter SoknadStreamResetter...")
-        val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup)
+        val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup, vaultSecrets)
         soknadResetter.run()
         log.info("SoknadStreamResetter kjørt.")
         database.connection.slettRawLog()
