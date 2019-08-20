@@ -1,24 +1,19 @@
 package no.nav.syfo.aksessering.kafka
 
-import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.syfo.Environment
 import no.nav.syfo.VaultSecrets
-import no.nav.syfo.objectMapper
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.config.SaslConfigs
 import org.slf4j.LoggerFactory
-import java.nio.file.Paths
 import java.time.Duration
 import java.util.*
 
 
-class SoknadStreamResetter(val env: Environment, private val topic: String, private val consumerGroupId: String) {
+class SoknadStreamResetter(val env: Environment, private val topic: String, private val consumerGroupId: String, private val vaultSecrets: VaultSecrets) {
 
     private val log = LoggerFactory.getLogger("no.nav.syfo.aksessering.kafka")
-    private val vaultSecrets =
-            objectMapper.readValue<VaultSecrets>(Paths.get("/var/run/secrets/nais.io/vault/credentials.json").toFile())
 
     fun run() {
         val prop = Properties()
@@ -47,7 +42,7 @@ class SoknadStreamResetter(val env: Environment, private val topic: String, priv
 
         try {
             log.info("polling...")
-            consumer.poll(Duration.ofSeconds(10))
+            consumer.poll(Duration.ofSeconds(7))
         } catch (e:Exception) {
             log.warn("exception on poll ", e)
         }
