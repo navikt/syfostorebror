@@ -1,2 +1,2 @@
 ALTER TABLE soknader_raw
-ADD COLUMN headers JSONB;
+ADD COLUMN headers text;

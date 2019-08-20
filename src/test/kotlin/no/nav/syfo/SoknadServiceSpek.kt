@@ -121,7 +121,7 @@ object SoknadServiceSpek : Spek( {
         }
 
         it ("søknad kan lagres i loggtabell") {
-            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
+            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message),"")
         }
 
     }
@@ -145,7 +145,7 @@ object SoknadServiceSpek : Spek( {
         }
 
         it ("loggtabell kan tømmes"){
-            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
+            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message), "")
             testDatabase.connection.slettRawLog()
             testDatabase.hentAntallRawSoknader() shouldEqual 0
         }

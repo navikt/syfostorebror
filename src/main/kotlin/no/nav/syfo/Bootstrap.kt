@@ -147,8 +147,7 @@ fun CoroutineScope.launchListeners(
                                 message.get("id").textValue(),
                                 message
                         )
-                        database.connection.lagreRawSoknad(message)
-                        log.info("message headers: ${headers}")
+                        database.connection.lagreRawSoknad(message, headers)
                         if (database.connection.erSoknadLagret(soknadRecord)){
                             log.error("Mulig duplikat - søknad er allerede lagret (pk: ${compositKey})")
                         } else {
