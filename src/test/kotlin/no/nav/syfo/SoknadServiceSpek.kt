@@ -78,7 +78,6 @@ object SoknadServiceSpek : Spek( {
 
     describe("Kan lese melding fra kafka og skrive den til postgres") {
         val message : String = File("src/test/resources/arbeidstakersoknad.json").readText() // Hent fra json
-        val headers : JsonNode = objectMapper.readTree("{}")
 
         it ("skal være kun en melding på topic, og det er den vi sendte"){
             producer.send(ProducerRecord(env.soknadTopic,message))
@@ -122,14 +121,13 @@ object SoknadServiceSpek : Spek( {
         }
 
         it ("søknad kan lagres i loggtabell") {
-            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message), headers)
+            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
         }
 
     }
 
     describe ("Consumer group offset kan nullstilles og logtabell tømmes ved behov"){
         val message : String = File("src/test/resources/arbeidstakersoknad.json").readText()
-        val headers : JsonNode = objectMapper.readTree("{}")
 
         it ("consumer group offset kan nullstilles"){
             producer.send(ProducerRecord(env.soknadTopic, message))
@@ -147,7 +145,7 @@ object SoknadServiceSpek : Spek( {
         }
 
         it ("loggtabell kan tømmes"){
-            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message), headers)
+            testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message))
             testDatabase.connection.slettRawLog()
             testDatabase.hentAntallRawSoknader() shouldEqual 0
         }

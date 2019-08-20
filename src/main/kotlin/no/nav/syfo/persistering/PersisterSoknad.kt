@@ -22,16 +22,15 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
     }
 }
 
-fun Connection.lagreRawSoknad(soknad: JsonNode, headers: JsonNode){
+fun Connection.lagreRawSoknad(soknad: JsonNode){
     use { connection ->
         connection.prepareStatement(
                 """
-                    INSERT INTO soknader_raw (soknad, headers)
-                    VALUES (to_jsonb(?), to_jsonb(?));
+                    INSERT INTO soknader_raw (soknad)
+                    VALUES (to_jsonb(?));
                 """.trimIndent()
         ).use {
             it.setObject(1, toPGObject(soknad))
-            it.setObject(2, toPGObject(headers))
             it.executeUpdate()
         }
         connection.commit()
