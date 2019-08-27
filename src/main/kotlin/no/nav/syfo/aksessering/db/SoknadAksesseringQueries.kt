@@ -5,7 +5,6 @@ import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.db.toList
 import no.nav.syfo.objectMapper
 import no.nav.syfo.persistering.SoknadRecord
-import org.postgresql.jdbc.PgResultSet.toInt
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -39,8 +38,7 @@ fun DatabaseInterface.hentAntallRawSoknader(): Int =
             }
         }
 
-@InternalAPI
-fun DatabaseInterface.hentSendteSoknader(fom: LocalDateTime, tom: LocalDateTime): List<SoknadRecord> =
+fun DatabaseInterface.hentSoknadsData(fom: LocalDateTime, tom: LocalDateTime): List<SoknadData> =
         connection.use { connection ->
             connection.prepareStatement(
                     """
@@ -52,8 +50,8 @@ fun DatabaseInterface.hentSendteSoknader(fom: LocalDateTime, tom: LocalDateTime)
                     """.trimIndent()
             ).use {
                 it.setTimestamp(1, Timestamp.valueOf(fom))
-                it.setTimestamp(1, Timestamp.valueOf(tom))
-                it.executeQuery().toList{ toSoknadRecord() }
+                it.setTimestamp(2, Timestamp.valueOf(tom))
+                it.executeQuery().toList{ toSoknadData() }
             }
         }
 
@@ -63,4 +61,9 @@ fun ResultSet.toSoknadRecord(): SoknadRecord =
                 compositKey = getString("composit_key"),
                 soknadId = getString("soknad_id"),
                 soknad = objectMapper.readTree(getString("soknad"))
+        )
+
+fun ResultSet.toSoknadData(): SoknadData =
+        SoknadData(
+                antall = getInt("antall")
         )

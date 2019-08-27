@@ -3,6 +3,7 @@ package no.nav.syfo
 import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
 import no.nav.syfo.aksessering.db.hentAntallRawSoknader
+import no.nav.syfo.aksessering.db.hentSoknadsData
 import no.nav.syfo.aksessering.db.hentSoknaderFraId
 import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
 import no.nav.syfo.kafka.loadBaseConfig
@@ -24,6 +25,7 @@ import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.net.ServerSocket
 import java.time.Duration
+import java.time.LocalDateTime
 import java.util.*
 
 @InternalAPI
@@ -106,7 +108,7 @@ object SoknadServiceSpek : Spek( {
             }
         }
 
-        it ("lagret søknad skal finnes i databasen") {
+        it ("lagret søknad skal finnes i databasen, og kun en gang") {
 
                 val soknadRecord = SoknadRecord(
                         "00000000-0000-0000-0000-000000000001|SENDT|null|2019-08-02T15:02:33.123",
@@ -115,7 +117,10 @@ object SoknadServiceSpek : Spek( {
                 )
                 testDatabase.connection.lagreSoknad(soknadRecord)
                 testDatabase.connection.erSoknadLagret(soknadRecord) shouldBe true
-
+                testDatabase.hentSoknadsData(LocalDateTime.of(2019,8,2,0,0),
+                        LocalDateTime.of(2019,8,3,0,0))[0].antall shouldEqual 1
+                testDatabase.hentSoknadsData(LocalDateTime.of(2019,8,3,0,0),
+                        LocalDateTime.of(2019,8,4,0,0)) shouldEqual emptyList()
         }
 
         it ("søknad kan lagres i loggtabell") {

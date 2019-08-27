@@ -40,6 +40,7 @@ class SoknadStreamResetter(val env: Environment, private val topic: String, priv
         log.info("Subscribing to topic ${topic}")
         consumer.subscribe(listOf(topic))
 
+        // Need to call poll() in order for consumer to join group
         try {
             log.info("polling...")
             consumer.poll(Duration.ofSeconds(7))
@@ -47,15 +48,18 @@ class SoknadStreamResetter(val env: Environment, private val topic: String, priv
             log.warn("exception on poll ", e)
         }
 
+        // Reset offset to beginning (not necessarily 0), depending on topic compaction
         log.info("seekToBeginning...")
         consumer.seekToBeginning(consumer.assignment())
 
+        // seekToBeginning is lazily evaluated, invoked on poll() or position()
         log.info("checking offsets...")
         for (partition in consumer.assignment()) {
             var offset = consumer.position(partition)
             log.info("partition: ${partition}, offset: ${offset}")
         }
 
+        // Commit offsets and gtfo
         log.info("calling commitSync...")
         val offsets = consumer.assignment().associateBy({ it }, { OffsetAndMetadata(0) })
         consumer.commitSync(offsets)

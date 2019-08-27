@@ -12,6 +12,7 @@ import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.util.InternalAPI
 import io.ktor.util.KtorExperimentalAPI
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
@@ -32,6 +33,8 @@ import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.api.registerSoknadDataApi
+import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.persistering.*
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -55,6 +58,7 @@ private val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
 val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher() + MDCContext()
 
+@InternalAPI
 fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()) {
     val env = Environment()
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
@@ -92,6 +96,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
             )
         }
         initRouting(applicationState)
+        dataRouting(database)
     }.start(wait = false)
 
     if (env.resetStreamOnly){
@@ -178,3 +183,8 @@ fun Application.initRouting(applicationState: ApplicationState) {
         )
     }
 }
+
+fun Application.dataRouting(database: DatabaseInterface) {
+    routing { registerSoknadDataApi(database) }
+}
+

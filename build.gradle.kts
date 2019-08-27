@@ -26,6 +26,7 @@ val flywayVersion = "5.2.4"
 val hikariVersion = "3.3.0"
 val vaultJavaDriveVersion = "3.1.0"
 val opentableVersion = "0.13.1"
+val mockkVersion = "1.9.3"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.31"
@@ -81,6 +82,7 @@ dependencies {
     testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
     testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
+    testImplementation ("io.mockk:mockk:$mockkVersion")
 
 
     testRuntimeOnly ("org.spekframework.spek2:spek-runtime-jvm:$spekVersion")
