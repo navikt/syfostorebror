@@ -7,6 +7,8 @@ import no.nav.syfo.objectMapper
 import no.nav.syfo.persistering.SoknadRecord
 import org.postgresql.jdbc.PgResultSet.toInt
 import java.sql.ResultSet
+import java.sql.Timestamp
+import java.time.LocalDateTime
 
 @InternalAPI
 fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
@@ -24,14 +26,6 @@ fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
         }
 
 @InternalAPI
-fun ResultSet.toSoknadRecord(): SoknadRecord =
-        SoknadRecord(
-                compositKey = getString("composit_key"),
-                soknadId = getString("soknad_id"),
-                soknad = objectMapper.readTree(getString("soknad"))
-        )
-
-@InternalAPI
 fun DatabaseInterface.hentAntallRawSoknader(): Int =
         connection.use { connection ->
             connection.prepareStatement(
@@ -44,3 +38,29 @@ fun DatabaseInterface.hentAntallRawSoknader(): Int =
 
             }
         }
+
+@InternalAPI
+fun DatabaseInterface.hentSendteSoknader(fom: LocalDateTime, tom: LocalDateTime): List<SoknadRecord> =
+        connection.use { connection ->
+            connection.prepareStatement(
+                    """
+                        SELECT 1 as antall
+                        FROM soknader
+                        WHERE soknad->>'status' = 'SENDT'
+                        AND soknad->>'opprettet' >= ?
+                        AND soknad->>'opprettet' < ?
+                    """.trimIndent()
+            ).use {
+                it.setTimestamp(1, Timestamp.valueOf(fom))
+                it.setTimestamp(1, Timestamp.valueOf(tom))
+                it.executeQuery().toList{ toSoknadRecord() }
+            }
+        }
+
+@InternalAPI
+fun ResultSet.toSoknadRecord(): SoknadRecord =
+        SoknadRecord(
+                compositKey = getString("composit_key"),
+                soknadId = getString("soknad_id"),
+                soknad = objectMapper.readTree(getString("soknad"))
+        )

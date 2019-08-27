@@ -1,6 +1,5 @@
 package no.nav.syfo
 
-import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
 import no.nav.syfo.aksessering.db.hentAntallRawSoknader
@@ -17,7 +16,6 @@ import org.amshove.kluent.shouldEqual
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.protocol.types.Field
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.slf4j.LoggerFactory
@@ -149,7 +147,6 @@ object SoknadServiceSpek : Spek( {
             testDatabase.connection.slettRawLog()
             testDatabase.hentAntallRawSoknader() shouldEqual 0
         }
-
     }
 
 

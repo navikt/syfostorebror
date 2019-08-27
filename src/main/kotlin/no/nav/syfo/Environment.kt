@@ -12,7 +12,8 @@ data class Environment(
         val databaseName: String = getEnvVar("DATABASE_NAME", "syfostorebror"),
         val syfostorebrorDBURL: String = getEnvVar("SYFOSTOREBROR_DB_URL"),
         val mountPathVault: String = getEnvVar("MOUNT_PATH_VAULT"),
-        val resetStreamOnly : Boolean = getEnvVar("RESET_STREAM_ONLY", "false") == "true"
+        val resetStreamOnly : Boolean = getEnvVar("RESET_STREAM_ONLY", "false") == "true",
+        val vaultPath: String = "/var/run/secrets/nais.io/vault/credentials.json"
 ) : KafkaConfig
 
 data class VaultSecrets(

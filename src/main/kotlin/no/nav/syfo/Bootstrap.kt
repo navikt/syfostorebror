@@ -57,8 +57,7 @@ val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatch
 
 fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()) {
     val env = Environment()
-    val vaultSecrets =
-            objectMapper.readValue<VaultSecrets>(Paths.get("/var/run/secrets/nais.io/vault/credentials.json").toFile())
+    val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
 
     val vaultCredentialService = VaultCredentialService()
