@@ -51,7 +51,7 @@ fun DatabaseInterface.hentSoknadsData(fom: LocalDateTime, tom: LocalDateTime): L
             ).use {
                 it.setTimestamp(1, Timestamp.valueOf(fom))
                 it.setTimestamp(2, Timestamp.valueOf(tom))
-                it.executeQuery().toList{ toSoknadData() }
+                it.executeQuery().toList { toSoknadData() }
             }
         }
 
@@ -65,5 +65,5 @@ fun ResultSet.toSoknadRecord(): SoknadRecord =
 
 fun ResultSet.toSoknadData(): SoknadData =
         SoknadData(
-                antall = getInt("antall")
+            antall = getInt("antall")
         )

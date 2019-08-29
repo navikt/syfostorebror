@@ -9,7 +9,6 @@ import io.ktor.response.respond
 import io.ktor.response.respondText
 import io.ktor.routing.Routing
 import io.ktor.routing.get
-import io.ktor.util.InternalAPI
 import no.nav.syfo.aksessering.db.hentSoknadsData
 import no.nav.syfo.db.DatabaseInterface
 import org.slf4j.LoggerFactory

@@ -8,6 +8,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.install
+import io.ktor.features.ContentNegotiation
+import io.ktor.jackson.jackson
 import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
@@ -185,6 +187,11 @@ fun Application.initRouting(applicationState: ApplicationState) {
 }
 
 fun Application.dataRouting(database: DatabaseInterface) {
+    install(ContentNegotiation) {
+        jackson {
+
+        }
+    }
     routing { registerSoknadDataApi(database) }
 }
 

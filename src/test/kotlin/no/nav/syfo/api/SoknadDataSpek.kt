@@ -1,7 +1,10 @@
 package no.nav.syfo.api
 
+import io.ktor.application.install
+import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.jackson.jackson
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
@@ -17,7 +20,9 @@ import no.nav.syfo.objectMapper
 import no.nav.syfo.persistering.SoknadRecord
 import no.nav.syfo.persistering.lagreSoknad
 import no.nav.syfo.testutil.TestDB
+import no.nav.syfo.testutil.dropData
 import org.amshove.kluent.shouldEqual
+import org.slf4j.LoggerFactory
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
@@ -26,28 +31,17 @@ import java.util.concurrent.TimeUnit
 
 object SoknadDataSpek : Spek( {
 
-//    val envMock = mockk<Environment>()
-//    val credMock = mockk<VaultCredentialService>()
-//    val database = Database(envMock, credMock)
-//
-//    every { database.hentSoknadsData(any(), any()) } returns
     val testDatabase = TestDB()
-    val credentials = VaultSecrets("", "")
-    val env = Environment(
-            applicationPort = 0,
-            applicationThreads = 1,
-            kafkaBootstrapServers = "",
-            mountPathVault = "vault.adeo.no",
-            soknadTopic = "",
-            syfostorebrorDBURL = "",
-            databaseName = "",
-            soknadConsumerGroup = "spek.integration-consumer"
-    )
-
+    val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 
     val engine = TestApplicationEngine()
     engine.start(wait = false)
     engine.application.apply {
+        install(ContentNegotiation) {
+            jackson {
+
+            }
+        }
         routing {
             registerSoknadDataApi(testDatabase)
         }
@@ -56,6 +50,8 @@ object SoknadDataSpek : Spek( {
 
     afterGroup {
         engine.stop(0, 0, TimeUnit.SECONDS)
+        testDatabase.connection.dropData()
+        testDatabase.stop()
     }
 
     describe ("Endepunkt for søknadsdata") {
@@ -69,12 +65,12 @@ object SoknadDataSpek : Spek( {
         it ("Finner søknaden gitt riktig periode"){
             testDatabase.connection.lagreSoknad(soknadRecord)
             with(engine.handleRequest(HttpMethod.Get, "/soknad_data"){
-                addHeader("tom", "2019-08-01T00:00:00.000")
-                addHeader("fom","2019-08-03T00:00:00.000")
+                addHeader("tom", "2019-08-03T00:00:00.000")
+                addHeader("fom","2019-08-01T00:00:00.000")
             }) {
                 response.status()?.shouldEqual(HttpStatusCode.OK)
+                log.info(response.content)
             }
-
         }
 
 
