@@ -8,9 +8,11 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.install
+import io.ktor.auth.authenticate
 import io.ktor.features.ContentNegotiation
 import io.ktor.jackson.jackson
 import io.ktor.metrics.micrometer.MicrometerMetrics
+import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -29,13 +31,12 @@ import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.slf4j.MDCContext
 import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
+import no.nav.syfo.api.*
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
-import no.nav.syfo.api.registerNaisApi
-import no.nav.syfo.api.registerSoknadDataApi
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.persistering.*
 import no.nav.syfo.vault.Vault
@@ -56,7 +57,8 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 }
 
-private val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
+val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
+const val NAV_CALLID = "Nav-CallId"
 
 val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher() + MDCContext()
 
@@ -65,6 +67,8 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     val env = Environment()
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
+
+    val authorizedUsers : List<String> = listOf()
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
@@ -86,19 +90,19 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     }
 
     val applicationServer = embeddedServer(Netty, env.applicationPort) {
-        install(MicrometerMetrics) {
-            registry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM)
-            meterBinders = listOf(
-                ClassLoaderMetrics(),
-                JvmMemoryMetrics(),
-                JvmGcMetrics(),
-                ProcessorMetrics(),
-                JvmThreadMetrics(),
-                LogbackMetrics()
-            )
-        }
+        setupMetrics()
+        setupAuth(env, authorizedUsers)
+        setupContentNegotiation(database)
         initRouting(applicationState)
-        dataRouting(database)
+        routing {
+            route("/api"){
+                enforceCallId(NAV_CALLID)
+                authenticate {
+                    registerSoknadDataApi(database)
+                }
+            }
+        }
+
     }.start(wait = false)
 
     if (env.resetStreamOnly){
@@ -112,7 +116,6 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
                 .envOverrides()
         val consumerProperties = kafkaBaseConfig.toConsumerConfig(
-                /* Todo: Koble på syfosøknad */
                 groupId = env.soknadConsumerGroup,
                 valueDeserializer = StringDeserializer::class
         )
@@ -173,6 +176,21 @@ fun CoroutineScope.launchListeners(
     }
 }
 
+
+private fun Application.setupMetrics() {
+    install(MicrometerMetrics) {
+        registry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT, CollectorRegistry.defaultRegistry, Clock.SYSTEM)
+        meterBinders = listOf(
+                ClassLoaderMetrics(),
+                JvmMemoryMetrics(),
+                JvmGcMetrics(),
+                ProcessorMetrics(),
+                JvmThreadMetrics(),
+                LogbackMetrics()
+        )
+    }
+}
+
 fun Application.initRouting(applicationState: ApplicationState) {
     routing {
         registerNaisApi(
@@ -185,13 +203,3 @@ fun Application.initRouting(applicationState: ApplicationState) {
         )
     }
 }
-
-fun Application.dataRouting(database: DatabaseInterface) {
-    install(ContentNegotiation) {
-        jackson {
-
-        }
-    }
-    routing { registerSoknadDataApi(database) }
-}
-
