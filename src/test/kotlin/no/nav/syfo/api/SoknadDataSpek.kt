@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.netty.handler.codec.http.HttpHeaders.addHeader
 import no.nav.syfo.Environment
 import no.nav.syfo.VaultSecrets
+import no.nav.syfo.aksessering.db.SoknadData
 import no.nav.syfo.aksessering.db.hentSoknadsData
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
@@ -69,7 +70,8 @@ object SoknadDataSpek : Spek( {
                 addHeader("fom","2019-08-01T00:00:00.000")
             }) {
                 response.status()?.shouldEqual(HttpStatusCode.OK)
-                log.info(response.content)
+                val soknaddata = objectMapper.readTree(response.content!!)
+                soknaddata[0].get("antall").intValue() shouldEqual 1
             }
         }
 

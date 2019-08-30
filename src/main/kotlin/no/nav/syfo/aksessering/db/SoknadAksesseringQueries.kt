@@ -65,5 +65,5 @@ fun ResultSet.toSoknadRecord(): SoknadRecord =
 
 fun ResultSet.toSoknadData(): SoknadData =
         SoknadData(
-            antall = getInt("antall")
+                antall = getInt("antall")
         )
