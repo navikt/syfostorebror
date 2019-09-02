@@ -20,6 +20,7 @@ object SelftestSpek : Spek({
             start()
             application.initRouting(applicationState)
 
+
             it("Returns ok on is_alive") {
                 applicationState.running = true
 

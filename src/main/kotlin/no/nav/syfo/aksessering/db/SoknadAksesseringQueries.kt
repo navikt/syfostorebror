@@ -5,8 +5,9 @@ import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.db.toList
 import no.nav.syfo.objectMapper
 import no.nav.syfo.persistering.SoknadRecord
-import org.postgresql.jdbc.PgResultSet.toInt
 import java.sql.ResultSet
+import java.sql.Timestamp
+import java.time.LocalDateTime
 
 @InternalAPI
 fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
@@ -24,14 +25,6 @@ fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
         }
 
 @InternalAPI
-fun ResultSet.toSoknadRecord(): SoknadRecord =
-        SoknadRecord(
-                compositKey = getString("composit_key"),
-                soknadId = getString("soknad_id"),
-                soknad = objectMapper.readTree(getString("soknad"))
-        )
-
-@InternalAPI
 fun DatabaseInterface.hentAntallRawSoknader(): Int =
         connection.use { connection ->
             connection.prepareStatement(
@@ -44,3 +37,33 @@ fun DatabaseInterface.hentAntallRawSoknader(): Int =
 
             }
         }
+
+fun DatabaseInterface.hentSoknadsData(fom: LocalDateTime, tom: LocalDateTime): List<SoknadData> =
+        connection.use { connection ->
+            connection.prepareStatement(
+                    """
+                        SELECT 1 as antall
+                        FROM soknader
+                        WHERE soknad->>'status' = 'SENDT'
+                        AND soknad->>'opprettet' >= ?
+                        AND soknad->>'opprettet' < ?
+                    """.trimIndent()
+            ).use {
+                it.setTimestamp(1, Timestamp.valueOf(fom))
+                it.setTimestamp(2, Timestamp.valueOf(tom))
+                it.executeQuery().toList { toSoknadData() }
+            }
+        }
+
+@InternalAPI
+fun ResultSet.toSoknadRecord(): SoknadRecord =
+        SoknadRecord(
+                compositKey = getString("composit_key"),
+                soknadId = getString("soknad_id"),
+                soknad = objectMapper.readTree(getString("soknad"))
+        )
+
+fun ResultSet.toSoknadData(): SoknadData =
+        SoknadData(
+                antall = getInt("antall")
+        )

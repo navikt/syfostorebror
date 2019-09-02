@@ -26,6 +26,7 @@ val flywayVersion = "5.2.4"
 val hikariVersion = "3.3.0"
 val vaultJavaDriveVersion = "3.1.0"
 val opentableVersion = "0.13.1"
+val mockkVersion = "1.9.3"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.31"
@@ -56,6 +57,9 @@ dependencies {
     implementation ("io.ktor:ktor-client-logging:$ktorVersion")
     implementation ("io.ktor:ktor-client-logging-jvm:$ktorVersion")
     implementation ("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation ("io.ktor:ktor-jackson:$ktorVersion")
+    implementation ("io.ktor:ktor-auth:$ktorVersion")
+    implementation ("io.ktor:ktor-auth-jwt:$ktorVersion")
 
     implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version")
     implementation ("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version")
@@ -81,6 +85,8 @@ dependencies {
     testImplementation ("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation ("no.nav:kafka-embedded-env:$kafkaEmbeddedVersion")
     testImplementation ("com.opentable.components:otj-pg-embedded:$opentableVersion")
+    testImplementation ("io.mockk:mockk:$mockkVersion")
+    testImplementation ("io.ktor:ktor-jackson:$ktorVersion")
 
 
     testRuntimeOnly ("org.spekframework.spek2:spek-runtime-jvm:$spekVersion")
