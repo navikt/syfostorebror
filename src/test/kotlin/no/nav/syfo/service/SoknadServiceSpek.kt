@@ -1,15 +1,20 @@
-package no.nav.syfo
+package no.nav.syfo.service
 
 import io.ktor.util.InternalAPI
 import no.nav.common.KafkaEnvironment
-import no.nav.syfo.aksessering.db.hentAntallRawSoknader
-import no.nav.syfo.aksessering.db.hentSoknadsData
-import no.nav.syfo.aksessering.db.hentSoknaderFraId
-import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
+import no.nav.syfo.Environment
+import no.nav.syfo.VaultSecrets
+import no.nav.syfo.service.soknad.aksessering.hentAntallRawSoknader
+import no.nav.syfo.service.soknad.aksessering.hentSoknadsData
+import no.nav.syfo.service.soknad.aksessering.hentSoknaderFraId
+import no.nav.syfo.kafka.StreamResetter
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.kafka.toProducerConfig
-import no.nav.syfo.persistering.*
+import no.nav.syfo.objectMapper
+import no.nav.syfo.service.soknad.SoknadRecord
+import no.nav.syfo.service.soknad.persistering.*
+import no.nav.syfo.service.soknad.soknadCompositKey
 import no.nav.syfo.testutil.TestDB
 import no.nav.syfo.testutil.dropData
 import org.amshove.kluent.shouldBe
@@ -19,7 +24,6 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.slf4j.LoggerFactory
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
@@ -52,7 +56,7 @@ object SoknadServiceSpek : Spek( {
             soknadTopic = topic,
             syfostorebrorDBURL = "",
             databaseName = "",
-            soknadConsumerGroup = "spek.integration-consumer"
+            consumerGroupId =  "spek.integration-consumer"
     )
 
     fun Properties.overrideForTest(): Properties = apply {
@@ -65,7 +69,7 @@ object SoknadServiceSpek : Spek( {
             .toProducerConfig("spek.integration", valueSerializer = StringSerializer::class)
     val producer = KafkaProducer<String, String>(producerProperties)
     val consumerProperties = baseConfig
-            .toConsumerConfig(env.soknadConsumerGroup, valueDeserializer = StringDeserializer::class)
+            .toConsumerConfig(env.consumerGroupId, valueDeserializer = StringDeserializer::class)
     val consumer = KafkaConsumer<String, String>(consumerProperties)
 
     consumer.subscribe(listOf(env.soknadTopic))
@@ -93,10 +97,7 @@ object SoknadServiceSpek : Spek( {
             messages.forEach{
                 val soknad = objectMapper.readTree(it.value())
                 val soknadRecord = SoknadRecord(
-            soknad.get("id").textValue() + "|" +
-                        soknad.get("status").textValue() + "|" +
-                        (soknad.get("sendtNav")?.textValue() ?: "null") + "|" +
-                        (soknad.get("sendtArbeidsgiver")?.textValue() ?: "null"),
+                        soknadCompositKey(soknad),
                         soknad.get("id").textValue(),
                         soknad
                 )
@@ -133,7 +134,7 @@ object SoknadServiceSpek : Spek( {
 
         it ("consumer group offset kan nullstilles"){
             producer.send(ProducerRecord(env.soknadTopic, message))
-            val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup, credentials)
+            val soknadResetter = StreamResetter(env.kafkaBootstrapServers, env.soknadTopic, env.consumerGroupId, credentials)
             soknadResetter.run()
 
             val resetConsumer = KafkaConsumer<String, String>(consumerProperties)
@@ -148,7 +149,7 @@ object SoknadServiceSpek : Spek( {
 
         it ("loggtabell kan tømmes"){
             testDatabase.connection.lagreRawSoknad(objectMapper.readTree(message), "")
-            testDatabase.connection.slettRawLog()
+            testDatabase.connection.slettSoknaderRawLog()
             testDatabase.hentAntallRawSoknader() shouldEqual 0
         }
     }

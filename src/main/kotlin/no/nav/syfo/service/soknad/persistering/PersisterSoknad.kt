@@ -1,6 +1,8 @@
-package no.nav.syfo.persistering
+package no.nav.syfo.service.soknad.persistering
 
 import com.fasterxml.jackson.databind.JsonNode
+import no.nav.syfo.service.soknad.SoknadRecord
+import no.nav.syfo.service.soknad.toPGObject
 import java.sql.Connection
 
 
@@ -38,11 +40,11 @@ fun Connection.lagreRawSoknad(soknad: JsonNode, headers: String){
     }
 }
 
-fun Connection.slettRawLog(){
+fun Connection.slettSoknaderRawLog(){
     use { connection ->
         connection.prepareStatement(
                 """
-                    DELETE FROM soknader_raw
+                    TRUNCATE soknader_raw
                 """.trimIndent()
         ).use {
             it.executeUpdate()

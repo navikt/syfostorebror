@@ -1,4 +1,4 @@
-package no.nav.syfo.aksessering.kafka
+package no.nav.syfo.kafka
 
 import no.nav.syfo.Environment
 import no.nav.syfo.VaultSecrets
@@ -11,13 +11,13 @@ import java.time.Duration
 import java.util.*
 
 
-class SoknadStreamResetter(val env: Environment, private val topic: String, private val consumerGroupId: String, private val vaultSecrets: VaultSecrets) {
+class StreamResetter(private val kafkaBootstrapServers: String, private val topic: String, private val consumerGroupId: String, private val vaultSecrets: VaultSecrets) {
 
-    private val log = LoggerFactory.getLogger("no.nav.syfo.aksessering.kafka")
+    private val log = LoggerFactory.getLogger("no.nav.syfo.kafka")
 
     fun run() {
         val prop = Properties()
-        prop.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, env.kafkaBootstrapServers)
+        prop.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers)
         prop.put(
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 "org.apache.kafka.common.serialization.StringDeserializer"

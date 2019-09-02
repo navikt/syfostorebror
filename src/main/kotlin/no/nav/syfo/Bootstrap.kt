@@ -9,8 +9,6 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.auth.authenticate
-import io.ktor.features.ContentNegotiation
-import io.ktor.jackson.jackson
 import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.route
 import io.ktor.routing.routing
@@ -30,15 +28,16 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.slf4j.MDCContext
-import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
+import no.nav.syfo.kafka.StreamResetter
 import no.nav.syfo.api.*
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
-import no.nav.syfo.db.DatabaseInterface
-import no.nav.syfo.persistering.*
+import no.nav.syfo.service.soknad.SoknadRecord
+import no.nav.syfo.service.soknad.persistering.*
+import no.nav.syfo.service.soknad.soknadCompositKey
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -106,17 +105,11 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     }.start(wait = false)
 
     if (env.resetStreamOnly){
-        log.info("Starter SoknadStreamResetter...")
-        val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup, vaultSecrets)
-        soknadResetter.run()
-        log.info("SoknadStreamResetter kjørt.")
-        database.connection.slettRawLog()
-        log.info("Raw-logg slettet.")
+        resetStreams(env, database, vaultSecrets)
     } else {
-        val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
-                .envOverrides()
+        val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets).envOverrides()
         val consumerProperties = kafkaBaseConfig.toConsumerConfig(
-                groupId = env.soknadConsumerGroup,
+                groupId = env.consumerGroupId,
                 valueDeserializer = StringDeserializer::class
         )
         launchListeners(env, applicationState, consumerProperties, database)
@@ -129,7 +122,6 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     applicationState.initialized = true
 }
 
-@KtorExperimentalAPI
 fun CoroutineScope.launchListeners(
         env: Environment,
         applicationState: ApplicationState,
@@ -147,10 +139,7 @@ fun CoroutineScope.launchListeners(
                         val message : JsonNode = objectMapper.readTree(consumerRecord.value())
                         val headers = consumerRecord.headers().toString()
                         consumerRecord.headers().toString()
-                        val compositKey: String = message.get("id").textValue() + "|" +
-                                message.get("status").textValue() + "|" +
-                                (message.get("sendtNav")?.textValue() ?: "null") + "|" +
-                                (message.get("sendtArbeidsgiver")?.textValue() ?: "null")
+                        val compositKey = soknadCompositKey(message)
                         val soknadRecord = SoknadRecord(
                                 compositKey,
                                 message.get("id").textValue(),
@@ -201,5 +190,20 @@ fun Application.initRouting(applicationState: ApplicationState) {
                     applicationState.running
                 }
         )
+    }
+}
+
+private fun resetStreams(env: Environment, database: Database, vaultSecrets: VaultSecrets)
+{
+    for (topic: String in env.resetStreams){
+        log.info("Starter StreamResetter for topic '${topic}'...")
+        val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
+        soknadResetter.run()
+        log.info("StreamResetter kjørt for topic '${topic}'.")
+
+        if (topic == env.soknadTopic){
+            database.connection.slettSoknaderRawLog()
+            log.info("Raw-logg slettet for søknadspersistering.")
+        }
     }
 }

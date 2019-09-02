@@ -16,18 +16,16 @@ import io.ktor.jackson.jackson
 import io.ktor.request.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.routing.Routing
 import io.ktor.routing.get
-import io.ktor.routing.routing
 import no.nav.syfo.Environment
-import no.nav.syfo.aksessering.db.hentSoknadsData
+import no.nav.syfo.service.soknad.aksessering.hentSoknadsData
 import no.nav.syfo.db.DatabaseInterface
 import org.slf4j.LoggerFactory
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-private val log = LoggerFactory.getLogger("no.nav.syfo.aksessering.kafka")
+private val log = LoggerFactory.getLogger("no.nav.syfo.kafka")
 
 fun Route.registerSoknadDataApi(databaseInterface: DatabaseInterface) {
     get("/soknad_data") {

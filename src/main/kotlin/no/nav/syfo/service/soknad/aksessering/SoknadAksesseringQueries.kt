@@ -1,10 +1,11 @@
-package no.nav.syfo.aksessering.db
+package no.nav.syfo.service.soknad.aksessering
 
 import io.ktor.util.InternalAPI
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.db.toList
 import no.nav.syfo.objectMapper
-import no.nav.syfo.persistering.SoknadRecord
+import no.nav.syfo.service.soknad.SoknadData
+import no.nav.syfo.service.soknad.SoknadRecord
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.LocalDateTime
