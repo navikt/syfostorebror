@@ -38,6 +38,7 @@ import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.service.soknad.SoknadRecord
 import no.nav.syfo.service.soknad.persistering.*
 import no.nav.syfo.service.soknad.soknadCompositKey
+import no.nav.syfo.service.sykmelding.persistering.blockingApplicationLogicSykmelding
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -129,15 +130,23 @@ fun CoroutineScope.launchListeners(
         database: Database
 ) {
     val soknadListeners = (1..env.applicationThreads).map {
-        val kafkaconsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
-        kafkaconsumerSoknad.subscribe(listOf(env.soknadTopic))
+        val kafkaConsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
+        kafkaConsumerSoknad.subscribe(listOf(env.soknadTopic))
         createListener(applicationState){
-            blockingApplicationLogicSoknad(applicationState, kafkaconsumerSoknad, database)
+            blockingApplicationLogicSoknad(applicationState, kafkaConsumerSoknad, database)
+        }
+    }.toList()
+
+    val sykmeldingListeners = (1..env.applicationThreads).map{
+        val kafkaConsumerSykmelding = KafkaConsumer<String, String>(consumerProperties)
+        kafkaConsumerSykmelding.subscribe(env.smTopics)
+        createListener(applicationState){
+            blockingApplicationLogicSykmelding(applicationState, kafkaConsumerSykmelding, database)
         }
     }.toList()
 
     applicationState.initialized = true
-    runBlocking { soknadListeners.forEach { it.join() } }
+    runBlocking { (soknadListeners + sykmeldingListeners).forEach { it.join() } }
 
 }
 
