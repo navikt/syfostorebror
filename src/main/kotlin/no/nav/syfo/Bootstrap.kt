@@ -128,41 +128,17 @@ fun CoroutineScope.launchListeners(
         consumerProperties: Properties,
         database: Database
 ) {
-    try {
-        val listeners = (1..env.applicationThreads).map {
-            launch {
-                val kafkaconsumer = KafkaConsumer<String, String>(consumerProperties)
-                kafkaconsumer.subscribe(listOf(env.soknadTopic))
+    val soknadListeners = (1..env.applicationThreads).map {
+        val kafkaconsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
+        kafkaconsumerSoknad.subscribe(listOf(env.soknadTopic))
+        createListener(applicationState){
+            blockingApplicationLogicSoknad(applicationState, kafkaconsumerSoknad, database)
+        }
+    }.toList()
 
-                while (applicationState.running) {
-                    kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        val message : JsonNode = objectMapper.readTree(consumerRecord.value())
-                        val headers = consumerRecord.headers().toString()
-                        consumerRecord.headers().toString()
-                        val compositKey = soknadCompositKey(message)
-                        val soknadRecord = SoknadRecord(
-                                compositKey,
-                                message.get("id").textValue(),
-                                message
-                        )
-                        database.connection.lagreRawSoknad(message, headers)
-                        if (database.connection.erSoknadLagret(soknadRecord)){
-                            log.error("Mulig duplikat - søknad er allerede lagret (pk: ${compositKey})")
-                        } else {
-                            database.connection.lagreSoknad(soknadRecord)
-                            log.info("Søknad lagret")
-                        }
-                    }
-                    delay(100)
-                }
-            }
-        }.toList()
+    applicationState.initialized = true
+    runBlocking { soknadListeners.forEach { it.join() } }
 
-        applicationState.initialized = true
-        runBlocking { listeners.forEach { it.join() } }
-    } finally {
-        applicationState.running = false
-    }
 }
 
 
@@ -207,3 +183,14 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
         }
     }
 }
+
+fun CoroutineScope.createListener(applicationState: ApplicationState, action: suspend CoroutineScope.() -> Unit): Job =
+        launch {
+            try {
+                action()
+            } finally {
+                applicationState.running = false
+            }
+        }
+
+
