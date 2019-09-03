@@ -1,7 +1,6 @@
 package no.nav.syfo
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -15,7 +14,6 @@ import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.InternalAPI
-import io.ktor.util.KtorExperimentalAPI
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
@@ -26,27 +24,33 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
-import kotlinx.coroutines.*
+import java.nio.file.Paths
+import java.util.Properties
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
-import no.nav.syfo.kafka.StreamResetter
-import no.nav.syfo.api.*
+import no.nav.syfo.api.enforceCallId
+import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.api.registerSoknadDataApi
+import no.nav.syfo.api.setupAuth
+import no.nav.syfo.api.setupContentNegotiation
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
+import no.nav.syfo.kafka.StreamResetter
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
-import no.nav.syfo.service.soknad.SoknadRecord
-import no.nav.syfo.service.soknad.persistering.*
-import no.nav.syfo.service.soknad.soknadCompositKey
+import no.nav.syfo.service.soknad.persistering.blockingApplicationLogicSoknad
+import no.nav.syfo.service.soknad.persistering.slettSoknaderRawLog
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
-import java.nio.file.Paths
-import java.time.Duration
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
 
@@ -67,7 +71,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
 
-    val authorizedUsers : List<String> = listOf()
+    val authorizedUsers: List<String> = listOf()
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
@@ -94,17 +98,20 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         setupContentNegotiation(database)
         initRouting(applicationState)
         routing {
-            route("/api"){
+            route("/api") {
                 enforceCallId(NAV_CALLID)
                 authenticate {
                     registerSoknadDataApi(database)
                 }
             }
         }
-
     }.start(wait = false)
 
-    if (env.resetStreamOnly){
+    Runtime.getRuntime().addShutdownHook(Thread {
+        applicationServer.stop(10, 10, TimeUnit.SECONDS)
+    })
+
+    if (env.resetStreamOnly) {
         resetStreams(env, database, vaultSecrets)
     } else {
         val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets).envOverrides()
@@ -115,32 +122,25 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         launchListeners(env, applicationState, consumerProperties, database)
     }
 
-    Runtime.getRuntime().addShutdownHook(Thread {
-        applicationServer.stop(10, 10, TimeUnit.SECONDS)
-    })
-
     applicationState.initialized = true
 }
 
 fun CoroutineScope.launchListeners(
-        env: Environment,
-        applicationState: ApplicationState,
-        consumerProperties: Properties,
-        database: Database
+    env: Environment,
+    applicationState: ApplicationState,
+    consumerProperties: Properties,
+    database: Database
 ) {
     val soknadListeners = (1..env.applicationThreads).map {
         val kafkaconsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
         kafkaconsumerSoknad.subscribe(listOf(env.soknadTopic))
-        createListener(applicationState){
+        createListener(applicationState) {
             blockingApplicationLogicSoknad(applicationState, kafkaconsumerSoknad, database)
         }
     }.toList()
 
     applicationState.initialized = true
-    runBlocking { soknadListeners.forEach { it.join() } }
-
 }
-
 
 private fun Application.setupMetrics() {
     install(MicrometerMetrics) {
@@ -169,15 +169,14 @@ fun Application.initRouting(applicationState: ApplicationState) {
     }
 }
 
-private fun resetStreams(env: Environment, database: Database, vaultSecrets: VaultSecrets)
-{
-    for (topic: String in env.resetStreams){
-        log.info("Starter StreamResetter for topic '${topic}'...")
+private fun resetStreams(env: Environment, database: Database, vaultSecrets: VaultSecrets) {
+    for (topic: String in env.resetStreams) {
+        log.info("Starter StreamResetter for topic '$topic'...")
         val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
         soknadResetter.run()
-        log.info("StreamResetter kjørt for topic '${topic}'.")
+        log.info("StreamResetter kjørt for topic '$topic'.")
 
-        if (topic == env.soknadTopic){
+        if (topic == env.soknadTopic) {
             database.connection.slettSoknaderRawLog()
             log.info("Raw-logg slettet for søknadspersistering.")
         }
@@ -192,5 +191,3 @@ fun CoroutineScope.createListener(applicationState: ApplicationState, action: su
                 applicationState.running = false
             }
         }
-
-

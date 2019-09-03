@@ -21,7 +21,6 @@ object SelftestSpek : Spek({
             start()
             application.initRouting(applicationState)
 
-
             it("Returns ok on is_alive") {
                 applicationState.running = true
 
@@ -45,7 +44,6 @@ object SelftestSpek : Spek({
                 with(handleRequest(HttpMethod.Get, "/is_alive")) {
                     response.status()?.isSuccess() shouldNotEqual true
                     response.content shouldNotEqual null
-
                 }
             }
             it("Returns error on failed is_ready") {
@@ -54,7 +52,6 @@ object SelftestSpek : Spek({
                 with(handleRequest(HttpMethod.Get, "/is_ready")) {
                     response.status()?.isSuccess() shouldNotEqual true
                     response.content shouldNotEqual null
-
                 }
             }
         }
