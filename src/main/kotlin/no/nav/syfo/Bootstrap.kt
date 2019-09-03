@@ -1,7 +1,6 @@
 package no.nav.syfo
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -9,15 +8,12 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.auth.authenticate
-import io.ktor.features.ContentNegotiation
-import io.ktor.jackson.jackson
 import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.InternalAPI
-import io.ktor.util.KtorExperimentalAPI
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
@@ -28,26 +24,33 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
-import kotlinx.coroutines.*
+import java.nio.file.Paths
+import java.util.Properties
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
-import no.nav.syfo.aksessering.kafka.SoknadStreamResetter
-import no.nav.syfo.api.*
+import no.nav.syfo.api.enforceCallId
+import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.api.registerSoknadDataApi
+import no.nav.syfo.api.setupAuth
+import no.nav.syfo.api.setupContentNegotiation
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
+import no.nav.syfo.kafka.StreamResetter
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
-import no.nav.syfo.db.DatabaseInterface
-import no.nav.syfo.persistering.*
+import no.nav.syfo.service.soknad.persistering.blockingApplicationLogicSoknad
+import no.nav.syfo.service.soknad.persistering.slettSoknaderRawLog
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
-import java.nio.file.Paths
-import java.time.Duration
-import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
 
@@ -68,7 +71,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
 
-    val authorizedUsers : List<String> = listOf()
+    val authorizedUsers: List<String> = listOf()
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
@@ -95,87 +98,49 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         setupContentNegotiation(database)
         initRouting(applicationState)
         routing {
-            route("/api"){
+            route("/api") {
                 enforceCallId(NAV_CALLID)
                 authenticate {
                     registerSoknadDataApi(database)
                 }
             }
         }
-
     }.start(wait = false)
-
-    if (env.resetStreamOnly){
-        log.info("Starter SoknadStreamResetter...")
-        val soknadResetter = SoknadStreamResetter(env, env.soknadTopic, env.soknadConsumerGroup, vaultSecrets)
-        soknadResetter.run()
-        log.info("SoknadStreamResetter kjørt.")
-        database.connection.slettRawLog()
-        log.info("Raw-logg slettet.")
-    } else {
-        val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets)
-                .envOverrides()
-        val consumerProperties = kafkaBaseConfig.toConsumerConfig(
-                groupId = env.soknadConsumerGroup,
-                valueDeserializer = StringDeserializer::class
-        )
-        launchListeners(env, applicationState, consumerProperties, database)
-    }
 
     Runtime.getRuntime().addShutdownHook(Thread {
         applicationServer.stop(10, 10, TimeUnit.SECONDS)
     })
 
+    if (env.resetStreamOnly) {
+        resetStreams(env, database, vaultSecrets)
+    } else {
+        val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets).envOverrides()
+        val consumerProperties = kafkaBaseConfig.toConsumerConfig(
+                groupId = env.consumerGroupId,
+                valueDeserializer = StringDeserializer::class
+        )
+        launchListeners(env, applicationState, consumerProperties, database)
+    }
+
     applicationState.initialized = true
 }
 
-@KtorExperimentalAPI
 fun CoroutineScope.launchListeners(
-        env: Environment,
-        applicationState: ApplicationState,
-        consumerProperties: Properties,
-        database: Database
+    env: Environment,
+    applicationState: ApplicationState,
+    consumerProperties: Properties,
+    database: Database
 ) {
-    try {
-        val listeners = (1..env.applicationThreads).map {
-            launch {
-                val kafkaconsumer = KafkaConsumer<String, String>(consumerProperties)
-                kafkaconsumer.subscribe(listOf(env.soknadTopic))
+    val soknadListeners = (1..env.applicationThreads).map {
+        val kafkaconsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
+        kafkaconsumerSoknad.subscribe(listOf(env.soknadTopic))
+        createListener(applicationState) {
+            blockingApplicationLogicSoknad(applicationState, kafkaconsumerSoknad, database)
+        }
+    }.toList()
 
-                while (applicationState.running) {
-                    kafkaconsumer.poll(Duration.ofMillis(0)).forEach {consumerRecord ->
-                        val message : JsonNode = objectMapper.readTree(consumerRecord.value())
-                        val headers = consumerRecord.headers().toString()
-                        consumerRecord.headers().toString()
-                        val compositKey: String = message.get("id").textValue() + "|" +
-                                message.get("status").textValue() + "|" +
-                                (message.get("sendtNav")?.textValue() ?: "null") + "|" +
-                                (message.get("sendtArbeidsgiver")?.textValue() ?: "null")
-                        val soknadRecord = SoknadRecord(
-                                compositKey,
-                                message.get("id").textValue(),
-                                message
-                        )
-                        database.connection.lagreRawSoknad(message, headers)
-                        if (database.connection.erSoknadLagret(soknadRecord)){
-                            log.error("Mulig duplikat - søknad er allerede lagret (pk: ${compositKey})")
-                        } else {
-                            database.connection.lagreSoknad(soknadRecord)
-                            log.info("Søknad lagret")
-                        }
-                    }
-                    delay(100)
-                }
-            }
-        }.toList()
-
-        applicationState.initialized = true
-        runBlocking { listeners.forEach { it.join() } }
-    } finally {
-        applicationState.running = false
-    }
+    applicationState.initialized = true
 }
-
 
 private fun Application.setupMetrics() {
     install(MicrometerMetrics) {
@@ -203,3 +168,26 @@ fun Application.initRouting(applicationState: ApplicationState) {
         )
     }
 }
+
+private fun resetStreams(env: Environment, database: Database, vaultSecrets: VaultSecrets) {
+    for (topic: String in env.resetStreams) {
+        log.info("Starter StreamResetter for topic '$topic'...")
+        val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
+        soknadResetter.run()
+        log.info("StreamResetter kjørt for topic '$topic'.")
+
+        if (topic == env.soknadTopic) {
+            database.connection.slettSoknaderRawLog()
+            log.info("Raw-logg slettet for søknadspersistering.")
+        }
+    }
+}
+
+fun CoroutineScope.createListener(applicationState: ApplicationState, action: suspend CoroutineScope.() -> Unit): Job =
+        launch {
+            try {
+                action()
+            } finally {
+                applicationState.running = false
+            }
+        }

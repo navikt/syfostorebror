@@ -16,40 +16,37 @@ import io.ktor.jackson.jackson
 import io.ktor.request.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
-import io.ktor.routing.Routing
 import io.ktor.routing.get
-import io.ktor.routing.routing
-import no.nav.syfo.Environment
-import no.nav.syfo.aksessering.db.hentSoknadsData
-import no.nav.syfo.db.DatabaseInterface
-import org.slf4j.LoggerFactory
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import no.nav.syfo.Environment
+import no.nav.syfo.db.DatabaseInterface
+import no.nav.syfo.service.soknad.aksessering.hentSoknadsData
+import org.slf4j.LoggerFactory
 
-private val log = LoggerFactory.getLogger("no.nav.syfo.aksessering.kafka")
+private val log = LoggerFactory.getLogger("no.nav.syfo.kafka")
 
 fun Route.registerSoknadDataApi(databaseInterface: DatabaseInterface) {
     get("/soknad_data") {
 
-        val fom : LocalDateTime = LocalDateTime.from(
+        val fom: LocalDateTime = LocalDateTime.from(
                 DateTimeFormatter.ISO_DATE_TIME.parse(call.request.header("fom"))) ?: run {
             call.respond(BadRequest, "Mangler header 'fom' med fom-dato")
             log.warn("Motatt kall uten fom-dato")
             return@get
         }
-        val tom : LocalDateTime = LocalDateTime.from(
+        val tom: LocalDateTime = LocalDateTime.from(
                 DateTimeFormatter.ISO_DATE_TIME.parse(call.request.header("tom"))) ?: run {
             call.respond(BadRequest, "Mangler header 'tom' med tom-dato")
             log.warn("Motatt kall uten tom-dato")
             return@get
         }
 
-        when (val soknadsdata = databaseInterface.hentSoknadsData(fom, tom)){
+        when (val soknadsdata = databaseInterface.hentSoknadsData(fom, tom)) {
             null -> call.respond(NotFound, "Ingen data for angitt periode")
             else -> call.respond(soknadsdata)
         }
-
     }
 }
 

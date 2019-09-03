@@ -1,10 +1,11 @@
-package no.nav.syfo.persistering
+package no.nav.syfo.service.soknad.persistering
 
 import com.fasterxml.jackson.databind.JsonNode
 import java.sql.Connection
+import no.nav.syfo.service.soknad.SoknadRecord
+import no.nav.syfo.service.soknad.toPGObject
 
-
-fun Connection.lagreSoknad(soknad : SoknadRecord){
+fun Connection.lagreSoknad(soknad: SoknadRecord) {
     use { connection ->
         connection.prepareStatement(
                 """
@@ -22,7 +23,7 @@ fun Connection.lagreSoknad(soknad : SoknadRecord){
     }
 }
 
-fun Connection.lagreRawSoknad(soknad: JsonNode, headers: String){
+fun Connection.lagreRawSoknad(soknad: JsonNode, headers: String) {
     use { connection ->
         connection.prepareStatement(
                 """
@@ -38,11 +39,11 @@ fun Connection.lagreRawSoknad(soknad: JsonNode, headers: String){
     }
 }
 
-fun Connection.slettRawLog(){
+fun Connection.slettSoknaderRawLog() {
     use { connection ->
         connection.prepareStatement(
                 """
-                    DELETE FROM soknader_raw
+                    TRUNCATE soknader_raw
                 """.trimIndent()
         ).use {
             it.executeUpdate()
@@ -52,7 +53,7 @@ fun Connection.slettRawLog(){
 }
 
 fun Connection.erSoknadLagret(soknad: SoknadRecord) =
-    use {connection ->
+    use { connection ->
         connection.prepareStatement(
                 """
                     SELECT composit_key
@@ -60,7 +61,7 @@ fun Connection.erSoknadLagret(soknad: SoknadRecord) =
                     WHERE composit_key=?
                 """.trimIndent()
         ).use {
-            it.setString(1,soknad.compositKey)
+            it.setString(1, soknad.compositKey)
             it.executeQuery().next()
         }
     }

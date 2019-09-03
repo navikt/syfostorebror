@@ -1,4 +1,4 @@
-package no.nav.syfo
+package no.nav.syfo.api
 
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -6,7 +6,8 @@ import io.ktor.http.isSuccess
 import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
-import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.ApplicationState
+import no.nav.syfo.initRouting
 import org.amshove.kluent.shouldEqual
 import org.amshove.kluent.shouldNotEqual
 import org.spekframework.spek2.Spek
@@ -19,7 +20,6 @@ object SelftestSpek : Spek({
         with(TestApplicationEngine()) {
             start()
             application.initRouting(applicationState)
-
 
             it("Returns ok on is_alive") {
                 applicationState.running = true
@@ -44,7 +44,6 @@ object SelftestSpek : Spek({
                 with(handleRequest(HttpMethod.Get, "/is_alive")) {
                     response.status()?.isSuccess() shouldNotEqual true
                     response.content shouldNotEqual null
-
                 }
             }
             it("Returns error on failed is_ready") {
@@ -53,7 +52,6 @@ object SelftestSpek : Spek({
                 with(handleRequest(HttpMethod.Get, "/is_ready")) {
                     response.status()?.isSuccess() shouldNotEqual true
                     response.content shouldNotEqual null
-
                 }
             }
         }

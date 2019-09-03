@@ -29,9 +29,10 @@ val opentableVersion = "0.13.1"
 val mockkVersion = "1.9.3"
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.3.31"
+    id("org.jetbrains.kotlin.jvm") version "1.3.50"
     id("com.diffplug.gradle.spotless") version "3.14.0"
     id("com.github.johnrengelman.shadow") version "4.0.4"
+    id ("org.jmailen.kotlinter") version "2.1.0"
 }
 
 
