@@ -1,7 +1,6 @@
 package no.nav.syfo
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -15,7 +14,6 @@ import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.InternalAPI
-import io.ktor.util.KtorExperimentalAPI
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
@@ -26,27 +24,30 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
-import kotlinx.coroutines.*
-import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import no.nav.syfo.api.enforceCallId
+import no.nav.syfo.api.registerNaisApi
+import no.nav.syfo.api.registerSoknadDataApi
+import no.nav.syfo.api.setupAuth
+import no.nav.syfo.api.setupContentNegotiation
 import no.nav.syfo.kafka.StreamResetter
-import no.nav.syfo.api.*
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
-import no.nav.syfo.service.soknad.SoknadRecord
-import no.nav.syfo.service.soknad.persistering.*
-import no.nav.syfo.service.soknad.soknadCompositKey
+import no.nav.syfo.service.soknad.persistering.blockingApplicationLogicSoknad
+import no.nav.syfo.service.soknad.persistering.slettSoknaderRawLog
 import no.nav.syfo.service.sykmelding.persistering.blockingApplicationLogicSykmelding
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
 import java.nio.file.Paths
-import java.time.Duration
-import java.util.*
-import java.util.concurrent.Executors
+import java.util.Properties
 import java.util.concurrent.TimeUnit
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
@@ -60,10 +61,8 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
 val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 const val NAV_CALLID = "Nav-CallId"
 
-val backgroundTasksContext = Executors.newFixedThreadPool(4).asCoroutineDispatcher() + MDCContext()
-
 @InternalAPI
-fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()) {
+fun main() {
     val env = Environment()
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
@@ -73,7 +72,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
 
-    launch(backgroundTasksContext) {
+    GlobalScope.launch() {
         try {
             Vault.renewVaultTokenTask(applicationState)
         } finally {
@@ -81,7 +80,7 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
         }
     }
 
-    launch(backgroundTasksContext) {
+    GlobalScope.launch() {
         try {
             vaultCredentialService.runRenewCredentialsTask { applicationState.running }
         } finally {
@@ -123,30 +122,26 @@ fun main() = runBlocking(Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     applicationState.initialized = true
 }
 
-fun CoroutineScope.launchListeners(
+fun launchListeners(
         env: Environment,
         applicationState: ApplicationState,
         consumerProperties: Properties,
         database: Database
 ) {
-    val soknadListeners = (1..env.applicationThreads).map {
-        val kafkaConsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
-        kafkaConsumerSoknad.subscribe(listOf(env.soknadTopic))
-        createListener(applicationState){
-            blockingApplicationLogicSoknad(applicationState, kafkaConsumerSoknad, database)
-        }
-    }.toList()
 
-    val sykmeldingListeners = (1..env.applicationThreads).map{
-        val kafkaConsumerSykmelding = KafkaConsumer<String, String>(consumerProperties)
-        kafkaConsumerSykmelding.subscribe(env.smTopics)
-        createListener(applicationState){
-            blockingApplicationLogicSykmelding(applicationState, kafkaConsumerSykmelding, database)
-        }
-    }.toList()
+    val kafkaConsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
+    kafkaConsumerSoknad.subscribe(listOf(env.soknadTopic))
+    createListener(applicationState){
+        blockingApplicationLogicSoknad(applicationState, kafkaConsumerSoknad, database)
+    }
+
+    val kafkaConsumerSykmelding = KafkaConsumer<String, String>(consumerProperties)
+    kafkaConsumerSykmelding.subscribe(env.smTopics)
+    createListener(applicationState){
+        blockingApplicationLogicSykmelding(applicationState, kafkaConsumerSykmelding, database)
+    }
 
     applicationState.initialized = true
-    runBlocking { (soknadListeners + sykmeldingListeners).forEach { it.join() } }
 
 }
 
@@ -193,8 +188,8 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
     }
 }
 
-fun CoroutineScope.createListener(applicationState: ApplicationState, action: suspend CoroutineScope.() -> Unit): Job =
-        launch {
+fun createListener(applicationState: ApplicationState, action: suspend CoroutineScope.() -> Unit): Job =
+        GlobalScope.launch {
             try {
                 action()
             } finally {
