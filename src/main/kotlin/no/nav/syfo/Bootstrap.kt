@@ -42,6 +42,7 @@ import no.nav.syfo.kafka.toConsumerConfig
 import no.nav.syfo.service.soknad.persistering.blockingApplicationLogicSoknad
 import no.nav.syfo.service.soknad.persistering.slettSoknaderRawLog
 import no.nav.syfo.service.sykmelding.persistering.blockingApplicationLogicSykmelding
+import no.nav.syfo.service.sykmelding.persistering.slettSykmeldingerRawLog
 import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -180,12 +181,14 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
         val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
         soknadResetter.run()
         log.info("StreamResetter kjørt for topic '${topic}'.")
-
-        if (topic == env.soknadTopic){
-            database.connection.slettSoknaderRawLog()
-            log.info("Raw-logg slettet for søknadspersistering.")
-        }
     }
+
+    database.connection.slettSoknaderRawLog()
+    log.info("Raw-logg slettet for søknadspersistering.")
+
+    database.connection.slettSykmeldingerRawLog()
+    log.info("Raw-logg slettet for sykmeldingspersistering.")
+
 }
 
 fun createListener(applicationState: ApplicationState, action: suspend CoroutineScope.() -> Unit): Job =

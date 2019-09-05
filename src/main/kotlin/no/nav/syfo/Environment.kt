@@ -30,10 +30,10 @@ data class VaultSecrets(
         val serviceuserUsername: String,
         val serviceuserPassword: String
 ) : KafkaCredentials {
+
     override val kafkaUsername: String = serviceuserUsername
     override val kafkaPassword: String = serviceuserPassword
 }
 
 fun getEnvVar(varName: String, defaultValue: String? = null) =
         System.getenv(varName) ?: defaultValue ?: throw RuntimeException("Missing required variable \"$varName\"")
-
