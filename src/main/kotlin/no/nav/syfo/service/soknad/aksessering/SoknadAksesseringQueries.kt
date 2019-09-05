@@ -1,14 +1,14 @@
 package no.nav.syfo.service.soknad.aksessering
 
 import io.ktor.util.InternalAPI
+import java.sql.ResultSet
+import java.sql.Timestamp
+import java.time.LocalDateTime
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.db.toList
 import no.nav.syfo.objectMapper
 import no.nav.syfo.service.soknad.SoknadData
 import no.nav.syfo.service.soknad.SoknadRecord
-import java.sql.ResultSet
-import java.sql.Timestamp
-import java.time.LocalDateTime
 
 @InternalAPI
 fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
@@ -20,8 +20,8 @@ fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
                         WHERE soknad_id=?;
                     """.trimIndent()
             ).use {
-                it.setString(1,soknadid)
-                it.executeQuery().toList{ toSoknadRecord() }
+                it.setString(1, soknadid)
+                it.executeQuery().toList { toSoknadRecord() }
             }
         }
 
@@ -34,8 +34,7 @@ fun DatabaseInterface.hentAntallRawSoknader(): Int =
                     """.trimIndent()
             ).use {
                 // Refactor opportunity: må man via en liste når man vet at spørringen alltid returnerer kun en rad?
-                it.executeQuery().toList{getInt("antall")}.first()
-
+                it.executeQuery().toList { getInt("antall") }.first()
             }
         }
 

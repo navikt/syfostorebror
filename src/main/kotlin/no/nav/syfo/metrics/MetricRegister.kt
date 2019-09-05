@@ -9,4 +9,3 @@ val SM_OVERVAKET: Counter = Counter.build()
         .name("sykmelding_overvaket_count")
         .help("Antall sykmeldinger talt og prosessert av syfostorebror")
         .register()
-

@@ -24,6 +24,9 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
+import java.nio.file.Paths
+import java.util.Properties
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -33,9 +36,9 @@ import no.nav.syfo.api.registerNaisApi
 import no.nav.syfo.api.registerSoknadDataApi
 import no.nav.syfo.api.setupAuth
 import no.nav.syfo.api.setupContentNegotiation
-import no.nav.syfo.kafka.StreamResetter
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
+import no.nav.syfo.kafka.StreamResetter
 import no.nav.syfo.kafka.envOverrides
 import no.nav.syfo.kafka.loadBaseConfig
 import no.nav.syfo.kafka.toConsumerConfig
@@ -47,9 +50,6 @@ import no.nav.syfo.vault.Vault
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.slf4j.LoggerFactory
-import java.nio.file.Paths
-import java.util.Properties
-import java.util.concurrent.TimeUnit
 
 data class ApplicationState(var running: Boolean = true, var initialized: Boolean = false)
 
@@ -68,7 +68,7 @@ fun main() {
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
 
-    val authorizedUsers : List<String> = listOf()
+    val authorizedUsers: List<String> = listOf()
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
@@ -95,17 +95,16 @@ fun main() {
         setupContentNegotiation(database)
         initRouting(applicationState)
         routing {
-            route("/api"){
+            route("/api") {
                 enforceCallId(NAV_CALLID)
                 authenticate {
                     registerSoknadDataApi(database)
                 }
             }
         }
-
     }.start(wait = false)
 
-    if (env.resetStreamOnly){
+    if (env.resetStreamOnly) {
         resetStreams(env, database, vaultSecrets)
     } else {
         val kafkaBaseConfig = loadBaseConfig(env, vaultSecrets).envOverrides()
@@ -124,28 +123,26 @@ fun main() {
 }
 
 fun launchListeners(
-        env: Environment,
-        applicationState: ApplicationState,
-        consumerProperties: Properties,
-        database: Database
+    env: Environment,
+    applicationState: ApplicationState,
+    consumerProperties: Properties,
+    database: Database
 ) {
 
     val kafkaConsumerSoknad = KafkaConsumer<String, String>(consumerProperties)
     kafkaConsumerSoknad.subscribe(listOf(env.soknadTopic))
-    createListener(applicationState){
+    createListener(applicationState) {
         blockingApplicationLogicSoknad(applicationState, kafkaConsumerSoknad, database)
     }
 
     val kafkaConsumerSykmelding = KafkaConsumer<String, String>(consumerProperties)
     kafkaConsumerSykmelding.subscribe(env.smTopics)
-    createListener(applicationState){
+    createListener(applicationState) {
         blockingApplicationLogicSykmelding(applicationState, kafkaConsumerSykmelding, database)
     }
 
     applicationState.initialized = true
-
 }
-
 
 private fun Application.setupMetrics() {
     install(MicrometerMetrics) {
@@ -174,13 +171,12 @@ fun Application.initRouting(applicationState: ApplicationState) {
     }
 }
 
-private fun resetStreams(env: Environment, database: Database, vaultSecrets: VaultSecrets)
-{
-    for (topic: String in env.resetStreams){
-        log.info("Starter StreamResetter for topic '${topic}'...")
+private fun resetStreams(env: Environment, database: Database, vaultSecrets: VaultSecrets) {
+    for (topic: String in env.resetStreams) {
+        log.info("Starter StreamResetter for topic '$topic'...")
         val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
         soknadResetter.run()
-        log.info("StreamResetter kjørt for topic '${topic}'.")
+        log.info("StreamResetter kjørt for topic '$topic'.")
     }
 
     database.connection.slettSoknaderRawLog()
@@ -188,7 +184,6 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
 
     database.connection.slettSykmeldingerRawLog()
     log.info("Raw-logg slettet for sykmeldingspersistering.")
-
 }
 
 fun createListener(applicationState: ApplicationState, action: suspend CoroutineScope.() -> Unit): Job =
@@ -199,5 +194,3 @@ fun createListener(applicationState: ApplicationState, action: suspend Coroutine
                 applicationState.running = false
             }
         }
-
-

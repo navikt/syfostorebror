@@ -1,11 +1,11 @@
 package no.nav.syfo.service.sykmelding.persistering
 
 import com.fasterxml.jackson.databind.JsonNode
-import no.nav.syfo.service.soknad.SoknadRecord
-import no.nav.syfo.service.soknad.toPGObject
 import java.sql.Connection
+import no.nav.syfo.db.toPGObject
+import no.nav.syfo.service.sykmelding.SykmeldingRecord
 
-fun Connection.lagreRawSykmelding(sykmelding: JsonNode, headers: String){
+fun Connection.lagreRawSykmelding(sykmelding: JsonNode, headers: String) {
     use { connection ->
         connection.prepareStatement(
                 """
@@ -21,7 +21,7 @@ fun Connection.lagreRawSykmelding(sykmelding: JsonNode, headers: String){
     }
 }
 
-fun Connection.slettSykmeldingerRawLog(){
+fun Connection.slettSykmeldingerRawLog() {
     use { connection ->
         connection.prepareStatement(
                 """
@@ -33,3 +33,33 @@ fun Connection.slettSykmeldingerRawLog(){
         connection.commit()
     }
 }
+
+fun Connection.lagreSykmelding(sykmelding: SykmeldingRecord) {
+    use { connection ->
+        connection.prepareStatement(
+                """
+                    INSERT INTO sykmeldinger (sykmelding_id, sykmelding)
+                    VALUES (?, to_jsonb(?));
+                """.trimIndent()
+        ).use {
+            it.setString(1, sykmelding.sykmeldingId)
+            it.setObject(2, toPGObject(sykmelding.sykmelding))
+            it.executeUpdate()
+        }
+        connection.commit()
+    }
+}
+
+fun Connection.erSykmeldingLagret(sykmelding: SykmeldingRecord) =
+        use { connection ->
+            connection.prepareStatement(
+                    """
+                    SELECT sykmelding_id
+                    FROM sykmeldinger
+                    WHERE sykmelding_id=?
+                """.trimIndent()
+            ).use {
+                it.setString(1, sykmelding.sykmeldingId)
+                it.executeQuery().next()
+            }
+        }
