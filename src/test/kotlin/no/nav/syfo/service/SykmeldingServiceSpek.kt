@@ -115,7 +115,7 @@ object SykmeldingServiceSpek : Spek({
         }
 
         it("sykmelding kan lagres i loggtabell") {
-            testDatabase.connection.lagreRawSykmelding(objectMapper.readTree(message), "")
+            testDatabase.connection.lagreRawSykmelding(objectMapper.readTree(message), "", "")
         }
     }
 

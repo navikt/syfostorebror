@@ -5,16 +5,17 @@ import java.sql.Connection
 import no.nav.syfo.db.toPGObject
 import no.nav.syfo.service.sykmelding.SykmeldingRecord
 
-fun Connection.lagreRawSykmelding(sykmelding: JsonNode, headers: String) {
+fun Connection.lagreRawSykmelding(sykmelding: JsonNode, headers: String, topic: String) {
     use { connection ->
         connection.prepareStatement(
                 """
-                    INSERT INTO sykmeldinger_raw (sykmelding, headers)
-                    VALUES (to_jsonb(?), ?);
+                    INSERT INTO sykmeldinger_raw (sykmelding, headers, topic)
+                    VALUES (to_jsonb(?), ?, ?);
                 """.trimIndent()
         ).use {
             it.setObject(1, toPGObject(sykmelding))
             it.setString(2, headers)
+            it.setString(3, topic)
             it.executeUpdate()
         }
         connection.commit()

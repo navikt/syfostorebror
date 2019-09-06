@@ -26,7 +26,7 @@ suspend fun blockingApplicationLogicSykmelding(
                     sykmelding = message
             )
 
-            database.connection.lagreRawSykmelding(message, headers)
+            database.connection.lagreRawSykmelding(message, headers, consumerRecord.topic())
             if (database.connection.erSykmeldingLagret(sykmeldingRecord)) {
                 log.error("Mulig duplikat - sykmelding er allerede lagret (id: ${sykmeldingId}")
             } else {
