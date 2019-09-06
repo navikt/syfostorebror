@@ -20,19 +20,19 @@ suspend fun blockingApplicationLogicSykmelding(
             val message: JsonNode = objectMapper.readTree(consumerRecord.value())
             val headers = consumerRecord.headers().toString()
             consumerRecord.headers().toString()
-//            val sykmeldingId = message.get("id").textValue()
-//            val sykmeldingRecord = SykmeldingRecord(
-//                    sykmeldingId = sykmeldingId,
-//                    sykmelding = message
-//            )
+            val sykmeldingId = message.get("sykmelding").get("id").textValue()
+            val sykmeldingRecord = SykmeldingRecord(
+                    sykmeldingId = sykmeldingId,
+                    sykmelding = message
+            )
 
             database.connection.lagreRawSykmelding(message, headers)
-//            if (database.connection.erSykmeldingLagret(sykmeldingRecord)) {
-//                log.error("Mulig duplikat - sykmelding er allerede lagret (id: ${sykmeldingId}")
-//            } else {
-//                database.connection.lagreSykmelding(sykmeldingRecord)
-//                log.info("Sykmelding lagret")
-//            }
+            if (database.connection.erSykmeldingLagret(sykmeldingRecord)) {
+                log.error("Mulig duplikat - sykmelding er allerede lagret (id: ${sykmeldingId}")
+            } else {
+                database.connection.lagreSykmelding(sykmeldingRecord)
+                log.info("Sykmelding lagret")
+            }
 
         }
         delay(100)

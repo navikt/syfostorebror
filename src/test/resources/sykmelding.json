@@ -1,0 +1,147 @@
+{
+  "msgId": "54419241161",
+  "tssid": "",
+  "navLogId": "41514922160",
+  "sykmelding": {
+    "id": "aaaaaaaa-ffff-eeee-bbbb-000000000000",
+    "msgId": "54419241161",
+    "perioder": [
+      {
+        "fom": "2019-08-22",
+        "tom": "2019-08-28",
+        "gradert": null,
+        "reisetilskudd": false,
+        "behandlingsdager": null,
+        "aktivitetIkkeMulig": {
+          "medisinskArsak": {
+            "arsak": [
+              "AKTIVITET_FORHINDRER_BEDRING"
+            ],
+            "beskrivelse": "andre årsaker til sykefravær"
+          },
+          "arbeidsrelatertArsak": {
+            "arsak": [
+              "ANNET"
+            ],
+            "beskrivelse": "andre årsaker til sykefravær"
+          }
+        },
+        "avventendeInnspillTilArbeidsgiver": null
+      }
+    ],
+    "prognose": {
+      "erIArbeid": {
+        "arbeidFOM": "2019-08-22",
+        "vurderingsdato": "2019-08-22",
+        "egetArbeidPaSikt": true,
+        "annetArbeidPaSikt": true
+      },
+      "erIkkeIArbeid": null,
+      "hensynArbeidsplassen": "Må ta det pent",
+      "arbeidsforEtterPeriode": true
+    },
+    "behandler": {
+      "fnr": "01010112345",
+      "her": null,
+      "hpr": null,
+      "tlf": "tel:99999999",
+      "adresse": {
+        "gate": "Kirkegårdsveien 3",
+        "land": "Country",
+        "kommune": "Rykkinn",
+        "postboks": null,
+        "postnummer": 1348
+      },
+      "fornavn": "Frida",
+      "aktoerId": "1000000000000",
+      "etternavn": "Frost",
+      "mellomnavn": "Perma"
+    },
+    "tiltakNAV": "Pasienten har plager som er kommet tilbake etter operasjon. Det er nylig tatt MR bildet som viser forandringer i hånd som mulig må opereres. Venter på time. Det er mulig sykemledingen vil vare utover aktuell sm periode. ",
+    "andreTiltak": null,
+    "arbeidsgiver": {
+      "navn": "LOMMEN BARNEHAVE",
+      "harArbeidsgiver": "EN_ARBEIDSGIVER",
+      "yrkesbetegnelse": "Pedagogisk leder",
+      "stillingsprosent": 100
+    },
+    "navnFastlege": "Victor Frankenstein",
+    "signaturDato": "2019-08-29T18:33:51.098",
+    "meldingTilNAV": null,
+    "avsenderSystem": {
+      "navn": "System X",
+      "versjon": "2015 R1 (4835)"
+    },
+    "pasientAktoerId": "5555555555555",
+    "kontaktMedPasient": {
+      "kontaktDato": null,
+      "begrunnelseIkkeKontakt": null
+    },
+    "behandletTidspunkt": "2019-08-21T22:00:00",
+    "medisinskVurdering": {
+      "yrkesskade": false,
+      "biDiagnoser": [
+        {
+          "kode": "L87",
+          "system": "2.16.578.1.12.4.1.1.7170"
+        }
+      ],
+      "svangerskap": false,
+      "hovedDiagnose": {
+        "kode": "L87",
+        "system": "2.16.578.1.12.4.1.1.7170"
+      },
+      "yrkesskadeDato": "2019-08-22",
+      "annenFraversArsak": {
+        "grunn": [],
+        "beskrivelse": "Medising årsak i kategorien annet"
+      }
+    },
+    "skjermesForPasient": false,
+    "tiltakArbeidsplassen": "Fortsett som sist.",
+    "syketilfelleStartDato": "2019-08-22",
+    "utdypendeOpplysninger": {
+      "6.2": {
+        "6.2.1": {
+          "svar": "Langvarig korsryggsmerter. Ømhet og smerte",
+          "sporsmal": "Beskriv kort sykehistorie, symptomer og funn i dagens situasjon.",
+          "restriksjoner": [
+            "SKJERMET_FOR_ARBEIDSGIVER"
+          ]
+        },
+        "6.2.2": {
+          "svar": "Kan ikke utføre arbeidsoppgaver 100% som kreves fra yrket. Duplikatbuster: 1ac0fd3b-0b81-4be3-a5d3-12bdb7815ccd",
+          "sporsmal": "Hvordan påvirker sykdommen arbeidsevnen",
+          "restriksjoner": [
+            "SKJERMET_FOR_ARBEIDSGIVER"
+          ]
+        },
+        "6.2.3": {
+          "svar": "Nei",
+          "sporsmal": "Har behandlingen frem til nå bedret arbeidsevnen?",
+          "restriksjoner": [
+            "SKJERMET_FOR_ARBEIDSGIVER"
+          ]
+        },
+        "6.2.4": {
+          "svar": "Henvist til fysio",
+          "sporsmal": "Beskriv Pågående og planlagt henvisning, utredning og/eller behandling",
+          "restriksjoner": [
+            "SKJERMET_FOR_ARBEIDSGIVER"
+          ]
+        }
+      }
+    },
+    "meldingTilArbeidsgiver": null
+  },
+  "tlfPasient": "tel:99999999",
+  "mottattDato": "2019-08-22T00:00:00",
+  "fellesformat": "",
+  "personNrLege": "02020254321",
+  "rulesetVersion": null,
+  "legekontorHerId": "12345678999",
+  "legekontorOrgNr": "909909909",
+  "personNrPasient": "01010112345",
+  "legekontorReshId": null,
+  "legekontorOrgName": "Testlegesenteret"
+}
