@@ -12,11 +12,6 @@ data class SoknadRecord(
     val soknad: JsonNode
 )
 
-fun toPGObject(json: JsonNode) = org.postgresql.util.PGobject().also {
-    it.type = "jsonb"
-    it.value = no.nav.syfo.objectMapper.writeValueAsString(json)
-}
-
 fun soknadCompositKey(soknad: JsonNode): String {
     return soknad.get("id").textValue() + "|" +
             soknad.get("status").textValue() + "|" +

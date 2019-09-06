@@ -2,8 +2,9 @@ package no.nav.syfo.service.soknad.persistering
 
 import com.fasterxml.jackson.databind.JsonNode
 import java.sql.Connection
+import no.nav.syfo.db.toPGObject
 import no.nav.syfo.service.soknad.SoknadRecord
-import no.nav.syfo.service.soknad.toPGObject
+
 
 fun Connection.lagreSoknad(soknad: SoknadRecord) {
     use { connection ->

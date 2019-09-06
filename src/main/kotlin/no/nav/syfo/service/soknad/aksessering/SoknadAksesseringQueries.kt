@@ -1,6 +1,5 @@
 package no.nav.syfo.service.soknad.aksessering
 
-import io.ktor.util.InternalAPI
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -10,7 +9,6 @@ import no.nav.syfo.objectMapper
 import no.nav.syfo.service.soknad.SoknadData
 import no.nav.syfo.service.soknad.SoknadRecord
 
-@InternalAPI
 fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
         connection.use { connection ->
             connection.prepareStatement(
@@ -25,7 +23,6 @@ fun DatabaseInterface.hentSoknaderFraId(soknadid: String): List<SoknadRecord> =
             }
         }
 
-@InternalAPI
 fun DatabaseInterface.hentAntallRawSoknader(): Int =
         connection.use { connection ->
             connection.prepareStatement(
@@ -55,7 +52,6 @@ fun DatabaseInterface.hentSoknadsData(fom: LocalDateTime, tom: LocalDateTime): L
             }
         }
 
-@InternalAPI
 fun ResultSet.toSoknadRecord(): SoknadRecord =
         SoknadRecord(
                 compositKey = getString("composit_key"),
