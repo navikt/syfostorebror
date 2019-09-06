@@ -15,6 +15,11 @@ suspend fun blockingApplicationLogicSykmelding(
     kafkaConsumer: KafkaConsumer<String, String>,
     database: Database
 ) {
+    for (partition in kafkaConsumer.assignment()) {
+        var offset = kafkaConsumer.position(partition)
+        log.info("partition: $partition, offset: $offset")
+    }
+
     while (applicationState.running) {
         kafkaConsumer.poll(Duration.ofMillis(0)).forEach { consumerRecord ->
             val message: JsonNode = objectMapper.readTree(consumerRecord.value())
