@@ -104,6 +104,7 @@ fun main() {
         }
     }.start(wait = false)
 
+
     if (env.resetStreamOnly) {
         resetStreams(env, database, vaultSecrets)
     } else {
@@ -115,14 +116,11 @@ fun main() {
         launchListeners(env, applicationState, consumerProperties, database)
     }
 
-    Runtime.getRuntime().addShutdownHook(Thread {
-        applicationServer.stop(10, 10, TimeUnit.SECONDS)
-    })
-
     applicationState.initialized = true
 }
 
 fun launchListeners(
+
     env: Environment,
     applicationState: ApplicationState,
     consumerProperties: Properties,
@@ -177,6 +175,7 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
         val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
         soknadResetter.run()
         log.info("StreamResetter kjørt for topic '$topic'.")
+
     }
 
     database.connection.slettSoknaderRawLog()

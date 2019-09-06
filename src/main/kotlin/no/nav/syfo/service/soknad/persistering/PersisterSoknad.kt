@@ -5,6 +5,7 @@ import java.sql.Connection
 import no.nav.syfo.db.toPGObject
 import no.nav.syfo.service.soknad.SoknadRecord
 
+
 fun Connection.lagreSoknad(soknad: SoknadRecord) {
     use { connection ->
         connection.prepareStatement(
