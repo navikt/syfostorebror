@@ -26,7 +26,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
 import java.nio.file.Paths
 import java.util.Properties
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -34,6 +33,7 @@ import kotlinx.coroutines.launch
 import no.nav.syfo.api.enforceCallId
 import no.nav.syfo.api.registerNaisApi
 import no.nav.syfo.api.registerSoknadDataApi
+import no.nav.syfo.api.registerSykmeldingDataApi
 import no.nav.syfo.api.setupAuth
 import no.nav.syfo.api.setupContentNegotiation
 import no.nav.syfo.db.Database
@@ -99,11 +99,11 @@ fun main() {
                 enforceCallId(NAV_CALLID)
                 authenticate {
                     registerSoknadDataApi(database)
+                    registerSykmeldingDataApi(database)
                 }
             }
         }
     }.start(wait = false)
-
 
     if (env.resetStreamOnly) {
         resetStreams(env, database, vaultSecrets)
@@ -175,7 +175,6 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
         val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
         soknadResetter.run()
         log.info("StreamResetter kjørt for topic '$topic'.")
-
     }
 
     database.connection.slettSoknaderRawLog()
