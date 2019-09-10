@@ -1,14 +1,10 @@
 package no.nav.syfo.api
 
-import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCallPipeline
 import io.ktor.application.call
 import io.ktor.application.install
-import io.ktor.auth.Authentication
-import io.ktor.auth.jwt.JWTPrincipal
-import io.ktor.auth.jwt.jwt
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.NotFound
@@ -17,16 +13,14 @@ import io.ktor.request.header
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
-import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import no.nav.syfo.Environment
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.service.soknad.aksessering.hentSoknadsData
 import no.nav.syfo.service.sykmelding.akessering.hentSykmeldingData
 import org.slf4j.LoggerFactory
 
-private val log = LoggerFactory.getLogger("no.nav.syfo.kafka")
+val log = LoggerFactory.getLogger("no.nav.syfo.kafka")
 
 fun Route.registerSoknadDataApi(databaseInterface: DatabaseInterface) {
     get("/soknad_data") {
@@ -70,30 +64,6 @@ fun Route.registerSykmeldingDataApi(databaseInterface: DatabaseInterface) {
         when (val sykmeldingdata = databaseInterface.hentSykmeldingData(fom, tom)) {
             null -> call.respond(NotFound, "Ingen data for angitt periode")
             else -> call.respond(sykmeldingdata)
-        }
-    }
-}
-
-fun Application.setupAuth(environment: Environment, authorizedUsers: List<String>) {
-    install(Authentication) {
-        jwt {
-            verifier(
-                    JwkProviderBuilder(URL(environment.jwkKeysUrl))
-                            .cached(10, 24, java.util.concurrent.TimeUnit.HOURS)
-                            .rateLimited(10, 1, java.util.concurrent.TimeUnit.MINUTES)
-                            .build(), environment.jwtIssuer
-            )
-            realm = "syfohelsenettproxy"
-            validate { credentials ->
-                val appid: String = credentials.payload.getClaim("appid").asString()
-                log.info("authorization attempt for $appid")
-                if (appid in authorizedUsers && credentials.payload.audience.contains(environment.clientId)) {
-                    log.info("authorization ok")
-                    return@validate JWTPrincipal(credentials.payload)
-                }
-                log.info("authorization failed")
-                return@validate null
-            }
         }
     }
 }
