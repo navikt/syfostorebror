@@ -33,12 +33,11 @@ suspend fun blockingApplicationLogicSykmelding(
 
             database.connection.lagreRawSykmelding(message, headers, consumerRecord.topic())
             if (database.connection.erSykmeldingLagret(sykmeldingRecord)) {
-                log.error("Mulig duplikat - sykmelding er allerede lagret (id: ${sykmeldingId}")
+                log.error("Mulig duplikat - sykmelding er allerede lagret (id: $sykmeldingId")
             } else {
                 database.connection.lagreSykmelding(sykmeldingRecord)
                 log.info("Sykmelding lagret")
             }
-
         }
         delay(100)
     }

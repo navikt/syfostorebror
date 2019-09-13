@@ -1,5 +1,6 @@
 package no.nav.syfo
 
+import com.auth0.jwk.JwkProviderBuilder
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -7,13 +8,15 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.install
+import io.ktor.auth.Authentication
 import io.ktor.auth.authenticate
+import io.ktor.auth.jwt.JWTPrincipal
+import io.ktor.auth.jwt.jwt
 import io.ktor.metrics.micrometer.MicrometerMetrics
 import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.util.InternalAPI
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics
@@ -24,9 +27,9 @@ import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.CollectorRegistry
+import java.net.URL
 import java.nio.file.Paths
 import java.util.Properties
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -34,7 +37,7 @@ import kotlinx.coroutines.launch
 import no.nav.syfo.api.enforceCallId
 import no.nav.syfo.api.registerNaisApi
 import no.nav.syfo.api.registerSoknadDataApi
-import no.nav.syfo.api.setupAuth
+import no.nav.syfo.api.registerSykmeldingDataApi
 import no.nav.syfo.api.setupContentNegotiation
 import no.nav.syfo.db.Database
 import no.nav.syfo.db.VaultCredentialService
@@ -62,7 +65,6 @@ val objectMapper: ObjectMapper = ObjectMapper().apply {
 val log = LoggerFactory.getLogger("no.nav.syfo.syfostorebror")
 const val NAV_CALLID = "Nav-CallId"
 
-@InternalAPI
 fun main() {
     val env = Environment()
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
@@ -93,17 +95,8 @@ fun main() {
         setupMetrics()
         setupAuth(env, authorizedUsers)
         setupContentNegotiation(database)
-        initRouting(applicationState)
-        routing {
-            route("/api") {
-                enforceCallId(NAV_CALLID)
-                authenticate {
-                    registerSoknadDataApi(database)
-                }
-            }
-        }
+        initRouting(applicationState, database)
     }.start(wait = false)
-
 
     if (env.resetStreamOnly) {
         resetStreams(env, database, vaultSecrets)
@@ -156,7 +149,20 @@ private fun Application.setupMetrics() {
     }
 }
 
-fun Application.initRouting(applicationState: ApplicationState) {
+fun Application.initRouting(applicationState: ApplicationState, database: Database) {
+    routing {
+        naisRouting(applicationState)
+        route("/api") {
+            enforceCallId(NAV_CALLID)
+            authenticate {
+                registerSoknadDataApi(database)
+                registerSykmeldingDataApi(database)
+            }
+        }
+    }
+}
+
+fun Application.naisRouting(applicationState: ApplicationState) {
     routing {
         registerNaisApi(
                 readynessCheck = {
@@ -175,7 +181,6 @@ private fun resetStreams(env: Environment, database: Database, vaultSecrets: Vau
         val soknadResetter = StreamResetter(env.kafkaBootstrapServers, topic, env.consumerGroupId, vaultSecrets)
         soknadResetter.run()
         log.info("StreamResetter kjørt for topic '$topic'.")
-
     }
 
     database.connection.slettSoknaderRawLog()
@@ -193,3 +198,27 @@ fun createListener(applicationState: ApplicationState, action: suspend Coroutine
                 applicationState.running = false
             }
         }
+
+fun Application.setupAuth(environment: Environment, authorizedUsers: List<String>) {
+    install(Authentication) {
+        jwt {
+            verifier(
+                    JwkProviderBuilder(URL(environment.jwkKeysUrl))
+                            .cached(10, 24, java.util.concurrent.TimeUnit.HOURS)
+                            .rateLimited(10, 1, java.util.concurrent.TimeUnit.MINUTES)
+                            .build(), environment.jwtIssuer
+            )
+            realm = "syfostorebror"
+            validate { credentials ->
+                val appid: String = credentials.payload.getClaim("appid").asString()
+                no.nav.syfo.api.log.info("authorization attempt for $appid")
+                if (appid in authorizedUsers && credentials.payload.audience.contains(environment.clientId)) {
+                    no.nav.syfo.api.log.info("authorization ok")
+                    return@validate JWTPrincipal(credentials.payload)
+                }
+                no.nav.syfo.api.log.info("authorization failed")
+                return@validate null
+            }
+        }
+    }
+}

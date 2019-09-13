@@ -7,7 +7,7 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.TestApplicationEngine
 import io.ktor.server.testing.handleRequest
 import no.nav.syfo.ApplicationState
-import no.nav.syfo.initRouting
+import no.nav.syfo.naisRouting
 import org.amshove.kluent.shouldEqual
 import org.amshove.kluent.shouldNotEqual
 import org.spekframework.spek2.Spek
@@ -19,7 +19,7 @@ object SelftestSpek : Spek({
     describe("Calling selftest with successful liveness and readyness tests") {
         with(TestApplicationEngine()) {
             start()
-            application.initRouting(applicationState)
+            application.naisRouting(applicationState)
 
             it("Returns ok on is_alive") {
                 applicationState.running = true
