@@ -1,5 +1,6 @@
 package no.nav.syfo.api
 
+import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.application.install
 import io.ktor.features.ContentNegotiation
 import io.ktor.http.HttpMethod
@@ -54,7 +55,7 @@ object DataSpek : Spek({
 
         it("Finner søknaden gitt riktig periode") {
             testDatabase.connection.lagreSoknad(soknadRecord)
-            with(engine.handleRequest(HttpMethod.Get, "/soknad_data") {
+            with(engine.handleRequest(HttpMethod.Get, "/v1/soknad/data") {
                 addHeader("fom", "2019-08-01T00:00:00.000")
                 addHeader("tom", "2019-08-03T00:00:00.000")
             }) {
@@ -65,21 +66,20 @@ object DataSpek : Spek({
         }
     }
 
-    describe("Endepunkt for sykmeldingsdata") {
-        val message: String = File("src/test/resources/sykmelding.json").readText()
+    describe("Endepunkt for sykmeldinger gitt lege") {
+        val message: JsonNode = objectMapper.readTree(File("src/test/resources/sykmelding.json").readText())
         val sykmeldingRecord = SykmeldingRecord(
-                "00000000-0000-0000-0000-000000000001",
-                objectMapper.readTree(message)
+                message.get("sykmelding").get("id").textValue(),
+                message
         )
         it("Finner sykmeldingen gitt riktig periode") {
             testDatabase.connection.lagreSykmelding(sykmeldingRecord)
-            with(engine.handleRequest(HttpMethod.Get, "/sykmelding_data") {
-                addHeader("fom", "2019-08-22T00:00:00.000")
-                addHeader("tom", "2019-08-23T00:00:00.000")
+            with(engine.handleRequest(HttpMethod.Get, "/v1/sykmeldinger/fra_lege") {
+                addHeader("legefnr", "02020254321")
             }) {
                 response.status()?.shouldEqual(HttpStatusCode.OK)
                 val sykmeldingdata = objectMapper.readTree(response.content!!)
-                sykmeldingdata[0].get("antall").intValue() shouldEqual 1
+                sykmeldingdata[0].get("id").textValue() shouldEqual message.get("sykmelding").get("id").textValue()
             }
         }
     }

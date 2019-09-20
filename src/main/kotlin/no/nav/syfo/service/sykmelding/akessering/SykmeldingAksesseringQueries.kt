@@ -7,6 +7,7 @@ import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.db.toList
 import no.nav.syfo.objectMapper
 import no.nav.syfo.service.sykmelding.SykmeldingData
+import no.nav.syfo.service.sykmelding.SykmeldingId
 import no.nav.syfo.service.sykmelding.SykmeldingRecord
 
 fun DatabaseInterface.hentSykmeldingFraId(sykmeldingid: String): List<SykmeldingRecord> =
@@ -49,3 +50,20 @@ fun ResultSet.toSykmeldingData(): SykmeldingData =
         SykmeldingData(
                 antall = getInt("antall")
         )
+
+fun DatabaseInterface.hentSykmeldingerFraLege(fnr: String): List<SykmeldingId> =
+        connection.use { connection ->
+            connection.prepareStatement(
+                    """
+                        SELECT sykmelding_id
+                        FROM sykmeldinger
+                        WHERE sykmelding->>'personNrLege' = ?
+                    """.trimIndent()
+            ).use {
+                it.setString(1, fnr)
+                it.executeQuery().toList { toSykmeldingId() }
+            }
+        }
+
+fun ResultSet.toSykmeldingId(): SykmeldingId =
+        SykmeldingId( id = getString("sykmelding_id"))
