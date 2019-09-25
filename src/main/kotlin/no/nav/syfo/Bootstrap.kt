@@ -70,7 +70,9 @@ fun main() {
     val vaultSecrets = objectMapper.readValue<VaultSecrets>(Paths.get(env.vaultPath).toFile())
     val applicationState = ApplicationState()
 
-    val authorizedUsers: List<String> = listOf()
+    val authorizedUsers: List<String> = listOf(
+            env.clientId // Self
+    )
 
     val vaultCredentialService = VaultCredentialService()
     val database = Database(env, vaultCredentialService)
