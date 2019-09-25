@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.application.Application
 import io.ktor.application.install
 import io.ktor.auth.Authentication
+import io.ktor.auth.authenticate
 import io.ktor.auth.jwt.JWTPrincipal
 import io.ktor.auth.jwt.jwt
 import io.ktor.metrics.micrometer.MicrometerMetrics
@@ -155,10 +156,10 @@ fun Application.initRouting(applicationState: ApplicationState, database: Databa
         naisRouting(applicationState)
         route("/api") {
             enforceCallId(NAV_CALLID)
-            // authenticate {
-            registerSoknadDataApi(database)
-            registerSykmeldingDataApi(database)
-            // }
+            authenticate {
+                registerSoknadDataApi(database)
+                registerSykmeldingDataApi(database)
+            }
         }
     }
 }
