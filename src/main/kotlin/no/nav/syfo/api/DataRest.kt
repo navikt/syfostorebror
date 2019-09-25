@@ -17,7 +17,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.service.soknad.aksessering.hentSoknadsData
-import no.nav.syfo.service.sykmelding.akessering.hentSykmeldingData
 import no.nav.syfo.service.sykmelding.akessering.hentSykmeldingerFraLege
 import org.slf4j.LoggerFactory
 

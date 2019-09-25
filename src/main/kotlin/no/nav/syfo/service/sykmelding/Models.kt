@@ -12,5 +12,5 @@ data class SykmeldingRecord(
 )
 
 data class SykmeldingId(
-        val id: String?
+    val id: String?
 )

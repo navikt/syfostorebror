@@ -66,4 +66,4 @@ fun DatabaseInterface.hentSykmeldingerFraLege(fnr: String): List<SykmeldingId> =
         }
 
 fun ResultSet.toSykmeldingId(): SykmeldingId =
-        SykmeldingId( id = getString("sykmelding_id"))
+        SykmeldingId(id = getString("sykmelding_id"))

@@ -21,14 +21,15 @@ data class Environment(
     val resetStreamOnly: Boolean = getEnvVar("RESET_STREAM_ONLY", "false") == "true",
     val resetStreams: List<String> = getEnvVar("RESET_STREAMS", "").split(","),
     val vaultPath: String = "/var/run/secrets/nais.io/vault/credentials.json",
-    val jwtIssuer: String = getEnvVar("JWT_ISSUER", ""),
+    val jwtIssuer: String = getEnvVar("JWT_ISSUER"),
     val jwkKeysUrl: String = getEnvVar("JWKKEYS_URL", "https://login.microsoftonline.com/common/discovery/keys"),
-    val clientId: String = getEnvVar("CLIENT_ID", "")
+    val clientId: String = getEnvVar("CLIENT_ID")
 ) : KafkaConfig
 
 data class VaultSecrets(
     val serviceuserUsername: String,
-    val serviceuserPassword: String
+    val serviceuserPassword: String,
+    val clientSecret: String
 ) : KafkaCredentials {
 
     override val kafkaUsername: String = serviceuserUsername
