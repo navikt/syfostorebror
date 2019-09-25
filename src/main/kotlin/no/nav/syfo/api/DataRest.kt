@@ -37,11 +37,10 @@ fun Route.registerSoknadDataApi(databaseInterface: DatabaseInterface) {
             log.warn("Motatt kall til /v1/soknad/data uten tom-dato")
             return@get
         }
+        val soknadsdata = databaseInterface.hentSoknadsData(fom, tom)
+        call.respond(soknadsdata)
+        log.info("Motatt kall til /v1/soknad/data")
 
-        when (val soknadsdata = databaseInterface.hentSoknadsData(fom, tom)) {
-            null -> call.respond(NotFound, "Ingen data for angitt periode")
-            else -> call.respond(soknadsdata)
-        }
     }
 }
 
@@ -52,10 +51,9 @@ fun Route.registerSykmeldingDataApi(databaseInterface: DatabaseInterface) {
             log.warn("Motatt kall til /v1/sykmeldinger/fra_lege uten leges f.nr.")
             return@get
         }
-        when (val sykmeldinger = databaseInterface.hentSykmeldingerFraLege(fnr)) {
-            null -> call.respond(NotFound, "Ingen data for angitt periode")
-            else -> call.respond(sykmeldinger)
-        }
+        val sykmeldinger = databaseInterface.hentSykmeldingerFraLege(fnr)
+        call.respond(sykmeldinger)
+        log.info("Mottatt kall til /v1/sykmeldinger/fra_lege")
     }
 }
 
