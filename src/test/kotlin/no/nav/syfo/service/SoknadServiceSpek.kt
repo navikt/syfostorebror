@@ -50,7 +50,7 @@ object SoknadServiceSpek : Spek({
             autoStart = false,
             topicNames = listOf(topic)
     )
-    val credentials = VaultSecrets("", "")
+    val credentials = VaultSecrets("", "", "")
     val env = Environment(
             applicationPort = getRandomPort(),
             applicationThreads = 1,
@@ -59,7 +59,9 @@ object SoknadServiceSpek : Spek({
             soknadTopic = topic,
             syfostorebrorDBURL = "",
             databaseName = "",
-            consumerGroupId = "spek.integration-consumer"
+            consumerGroupId = "spek.integration-consumer",
+            jwtIssuer = "https://sts.issuer.net/myid",
+            clientId = "syfostorebror-clientId"
     )
 
     fun Properties.overrideForTest(): Properties = apply {

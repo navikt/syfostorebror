@@ -17,54 +17,43 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import no.nav.syfo.db.DatabaseInterface
 import no.nav.syfo.service.soknad.aksessering.hentSoknadsData
-import no.nav.syfo.service.sykmelding.akessering.hentSykmeldingData
+import no.nav.syfo.service.sykmelding.akessering.hentSykmeldingerFraLege
 import org.slf4j.LoggerFactory
 
 val log = LoggerFactory.getLogger("no.nav.syfo.kafka")
 
 fun Route.registerSoknadDataApi(databaseInterface: DatabaseInterface) {
-    get("/soknad_data") {
+    get("/v1/soknad/data") {
 
         val fom: LocalDateTime = LocalDateTime.from(
                 DateTimeFormatter.ISO_DATE_TIME.parse(call.request.header("fom"))) ?: run {
             call.respond(BadRequest, "Mangler header 'fom' med fom-dato")
-            log.warn("Motatt kall til /soknad_data uten fom-dato")
+            log.warn("Motatt kall til /v1/soknad/data uten fom-dato")
             return@get
         }
         val tom: LocalDateTime = LocalDateTime.from(
                 DateTimeFormatter.ISO_DATE_TIME.parse(call.request.header("tom"))) ?: run {
             call.respond(BadRequest, "Mangler header 'tom' med tom-dato")
-            log.warn("Motatt kall til /soknad_data uten tom-dato")
+            log.warn("Motatt kall til /v1/soknad/data uten tom-dato")
             return@get
         }
+        val soknadsdata = databaseInterface.hentSoknadsData(fom, tom)
+        call.respond(soknadsdata)
+        log.info("Motatt kall til /v1/soknad/data")
 
-        when (val soknadsdata = databaseInterface.hentSoknadsData(fom, tom)) {
-            null -> call.respond(NotFound, "Ingen data for angitt periode")
-            else -> call.respond(soknadsdata)
-        }
     }
 }
 
 fun Route.registerSykmeldingDataApi(databaseInterface: DatabaseInterface) {
-    get("/sykmelding_data") {
-
-        val fom: LocalDateTime = LocalDateTime.from(
-                DateTimeFormatter.ISO_DATE_TIME.parse(call.request.header("fom"))) ?: run {
-            call.respond(BadRequest, "Mangler header 'fom' med fom-dato")
-            log.warn("Motatt kall til /sykmelding_data uten fom-dato")
+    get("/v1/sykmeldinger/fra_lege") {
+        val fnr: String = call.request.header("legefnr") ?: run {
+            call.respond(BadRequest, "Mangler header 'legefnr' med leges f.nr")
+            log.warn("Motatt kall til /v1/sykmeldinger/fra_lege uten leges f.nr.")
             return@get
         }
-        val tom: LocalDateTime = LocalDateTime.from(
-                DateTimeFormatter.ISO_DATE_TIME.parse(call.request.header("tom"))) ?: run {
-            call.respond(BadRequest, "Mangler header 'tom' med tom-dato")
-            log.warn("Motatt kall til /sykmelding_data uten tom-dato")
-            return@get
-        }
-
-        when (val sykmeldingdata = databaseInterface.hentSykmeldingData(fom, tom)) {
-            null -> call.respond(NotFound, "Ingen data for angitt periode")
-            else -> call.respond(sykmeldingdata)
-        }
+        val sykmeldinger = databaseInterface.hentSykmeldingerFraLege(fnr)
+        call.respond(sykmeldinger)
+        log.info("Mottatt kall til /v1/sykmeldinger/fra_lege")
     }
 }
 
